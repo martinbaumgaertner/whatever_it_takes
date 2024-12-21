@@ -9,6 +9,13 @@
     ]
   },
   "Packages": {
+    "BH": {
+      "Package": "BH",
+      "Version": "1.87.0-1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "468d9a03ba57f22ebde50060fd13ba9f"
+    },
     "DBI": {
       "Package": "DBI",
       "Version": "1.2.3",
@@ -62,6 +69,31 @@
       ],
       "Hash": "5122bb14d8736372411f955e1b16bc8a"
     },
+    "MatrixExtra": {
+      "Package": "MatrixExtra",
+      "Version": "0.1.15",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Matrix",
+        "Rcpp",
+        "RhpcBLASctl",
+        "float",
+        "methods"
+      ],
+      "Hash": "810aca0f5275951ca65e83941a060662"
+    },
+    "NLP": {
+      "Package": "NLP",
+      "Version": "0.3-2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "utils"
+      ],
+      "Hash": "0f2f96dd478fcfad0266f6d7a58fe43b"
+    },
     "R6": {
       "Package": "R6",
       "Version": "2.5.1",
@@ -106,6 +138,13 @@
         "utils"
       ],
       "Hash": "9da7c242d94a8419d045f6b3a64b9765"
+    },
+    "RhpcBLASctl": {
+      "Package": "RhpcBLASctl",
+      "Version": "0.23-42",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "c966ea2957ff75e77afa5c908dfc89e1"
     },
     "SnowballC": {
       "Package": "SnowballC",
@@ -388,6 +427,24 @@
       ],
       "Hash": "33698c4b3127fc9f506654607fb73676"
     },
+    "doc2vec": {
+      "Package": "doc2vec",
+      "Version": "0.2.0",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "doc2vec",
+      "RemoteUsername": "martinbaumgaertner",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "9f88f58b2593b6f0f1a1330107a147e6f29b5caf",
+      "Requirements": [
+        "R",
+        "Rcpp",
+        "stats",
+        "utils"
+      ],
+      "Hash": "7411ba635457474c4df163e50dd84401"
+    },
     "dplyr": {
       "Package": "dplyr",
       "Version": "1.1.4",
@@ -475,6 +532,19 @@
         "R"
       ],
       "Hash": "8c406b7284bbaef08e01c6687367f195"
+    },
+    "float": {
+      "Package": "float",
+      "Version": "0.3-2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "methods",
+        "tools",
+        "utils"
+      ],
+      "Hash": "0d644aed82556eaf30e1601599592e47"
     },
     "fontawesome": {
       "Package": "fontawesome",
@@ -752,6 +822,16 @@
       ],
       "Hash": "0080607b4a1a7b28979aecef976d8bc2"
     },
+    "janeaustenr": {
+      "Package": "janeaustenr",
+      "Version": "1.0.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "26f391e42073877818f2d4f0470dca24"
+    },
     "jquerylib": {
       "Package": "jquerylib",
       "Version": "0.1.4",
@@ -813,6 +893,17 @@
         "utils"
       ],
       "Hash": "7c5e89f04e72d6611c77451f6331a091"
+    },
+    "lgr": {
+      "Package": "lgr",
+      "Version": "0.4.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "R6"
+      ],
+      "Hash": "a6bc51765d7e9eeb2b225a11805527aa"
     },
     "lifecycle": {
       "Package": "lifecycle",
@@ -888,6 +979,18 @@
       ],
       "Hash": "18e9c28c1d3ca1560ce30658b22ce104"
     },
+    "mlapi": {
+      "Package": "mlapi",
+      "Version": "0.1.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Matrix",
+        "R6",
+        "methods"
+      ],
+      "Hash": "12498a143cf0333be625ca133f381c28"
+    },
     "modelr": {
       "Package": "modelr",
       "Version": "0.1.11",
@@ -905,6 +1008,18 @@
         "vctrs"
       ],
       "Hash": "4f50122dc256b1b6996a4703fecea821"
+    },
+    "modeltools": {
+      "Package": "modeltools",
+      "Version": "0.2-23",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "methods",
+        "stats",
+        "stats4"
+      ],
+      "Hash": "f5a957c02222589bdf625a67be68b2a9"
     },
     "munsell": {
       "Package": "munsell",
@@ -1236,6 +1351,25 @@
       ],
       "Hash": "df99277f63d01c34e95e3d2f06a79736"
     },
+    "rsparse": {
+      "Package": "rsparse",
+      "Version": "0.5.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Matrix",
+        "MatrixExtra",
+        "R",
+        "Rcpp",
+        "RcppArmadillo",
+        "RhpcBLASctl",
+        "data.table",
+        "float",
+        "lgr",
+        "methods"
+      ],
+      "Hash": "bbaa3b33c9005a601eb3e791dc79dd57"
+    },
     "rstudioapi": {
       "Package": "rstudioapi",
       "Version": "0.17.1",
@@ -1309,6 +1443,17 @@
       ],
       "Hash": "3838071b66e0c566d55cc26bd6e27bf4"
     },
+    "slam": {
+      "Package": "slam",
+      "Version": "0.1-55",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "stats"
+      ],
+      "Hash": "a2a11fdcb7cf5afbf31aeb0e3828fbf6"
+    },
     "stopwords": {
       "Package": "stopwords",
       "Version": "2.3",
@@ -1368,6 +1513,26 @@
         "lifecycle"
       ],
       "Hash": "213b6b8ed5afbf934843e6c3b090d418"
+    },
+    "text2vec": {
+      "Package": "text2vec",
+      "Version": "0.6.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Matrix",
+        "R",
+        "R6",
+        "Rcpp",
+        "data.table",
+        "digest",
+        "lgr",
+        "methods",
+        "mlapi",
+        "rsparse",
+        "stringi"
+      ],
+      "Hash": "94a38cec24f865c5b1f4efbb85687df6"
     },
     "textshaping": {
       "Package": "textshaping",
@@ -1440,6 +1605,29 @@
       ],
       "Hash": "829f27b9c4919c16b593794a6344d6c0"
     },
+    "tidytext": {
+      "Package": "tidytext",
+      "Version": "0.4.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Matrix",
+        "R",
+        "cli",
+        "dplyr",
+        "generics",
+        "janeaustenr",
+        "lifecycle",
+        "methods",
+        "purrr",
+        "rlang",
+        "stringr",
+        "tibble",
+        "tokenizers",
+        "vctrs"
+      ],
+      "Hash": "612125521ebc22fd028182761211b5d9"
+    },
     "tidyverse": {
       "Package": "tidyverse",
       "Version": "2.0.0",
@@ -1500,6 +1688,54 @@
         "xfun"
       ],
       "Hash": "3ec7e3ddcacc2d34a9046941222bf94d"
+    },
+    "tm": {
+      "Package": "tm",
+      "Version": "0.7-15",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "BH",
+        "NLP",
+        "R",
+        "Rcpp",
+        "graphics",
+        "parallel",
+        "slam",
+        "stats",
+        "tools",
+        "utils",
+        "xml2"
+      ],
+      "Hash": "86cd27c90397242ddd61ada59b2086b0"
+    },
+    "tokenizers": {
+      "Package": "tokenizers",
+      "Version": "0.3.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "Rcpp",
+        "SnowballC",
+        "stringi"
+      ],
+      "Hash": "76d35ebfaaf291e08c15696c9f2ec96d"
+    },
+    "topicmodels": {
+      "Package": "topicmodels",
+      "Version": "0.2-17",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "methods",
+        "modeltools",
+        "slam",
+        "stats4",
+        "tm"
+      ],
+      "Hash": "d18ad8211a478d33299d789b905f06a0"
     },
     "tzdb": {
       "Package": "tzdb",
