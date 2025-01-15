@@ -23,6 +23,6 @@ glove <- GlobalVectors$new(rank = 300, x_max = 10, learning_rate = .1)
 glove$fit_transform(tcm, n_iter = 20, n_threads = 12)
 
 word_vectors <- t(glove$components) %>%
-  as_tibble(rownames <- "word")
+  as_tibble(rownames = "word")
 
 saveRDS(word_vectors, paste0(embeddings_path, "fullglove10w300.Rds"))

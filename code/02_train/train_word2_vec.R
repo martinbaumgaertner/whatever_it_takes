@@ -1,5 +1,5 @@
 library(tidyverse)
-library(doc2vec)
+library(word2vec)
 
 dataset_path <- "data/processed/dataset.Rds"
 embeddings_path <- "data/embeddings/"
