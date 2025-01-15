@@ -31,21 +31,14 @@
 # Preparation ------------------------------------------------------------------
 
 
-###### Remove all objects from the current workspace
-rm(list = ls())
-
-##### Set the working directory to the location of the current script
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-
-##### Source a setup script
-source("00_setup.R")
-
-#### Load FRED API key
-fredr_set_key("YOUR.API.KEY")
-
-
-
-
+library(fredr)
+library(tidyverse)
+library(tidytext)
+# https://fredaccount.stlouisfed.org/apikeys
+fredr_set_key("your_key_here")
+library(quanteda)
+library(caret)
+library(readxl)
 
 
 # Data -------------------------------------------------------------------------
@@ -54,16 +47,16 @@ fredr_set_key("YOUR.API.KEY")
 ## Speech Data ------------
 
 ##### Load Speech-data
-dataset <- readRDS("corpus/dataset.Rds")
+dataset <- readRDS("data/processed/text_data.Rds")
 dataset <- dataset %>% filter(cb == "US Federal Reserve", language == "en", date < "2021-12-31", date > "2000-01-01") #
 dataset$quarter <- floor_date(dataset$date, "month")
-dataset <- dataset %>% select(quarter, doc_id, text_colloc)
+dataset <- dataset %>% select(quarter, doc_id, text)
 
 #### Document IDs with corresponding dates
 docid_date <- dataset %>% select(date = quarter, doc_id)
 
 ##### Speech Train/Test Document-Frequency-Matrix (DFM)
-dfm <- corpus(dataset, text_field = "text_colloc") %>%
+dfm <- corpus(dataset, text_field = "text") %>%
   tokens() %>%
   dfm()
 
@@ -85,7 +78,7 @@ INTEREST_RATE <- fredr(c("IR3TIB01USM156N")) %>% select(date, INTEREST_RATE = va
 CPI <- fredr(c("CPALTT01USM659N")) %>% select(date, CPI = value) # CPI: Total for United States (CPALTT01USM659N)
 PRODUCTION <- fredr(c("PRMNTO01USQ661N"), units = "chg") %>% select(date, PRODUCTION = value) # Production, Sales, Work Started and Orders: Production Volume: Economic Activity (PRMNTO01USQ661N)
 UNRATE <- fredr(c("UNRATE")) %>% select(date, UNRATE = value) # Unemployment Rate (UNRATE)
-SHADOW_RATE <- read_excel("Wu-Xia Shadow Rate/WuXiaShadowRate.xlsx", sheet = 2, skip = 1, col_types = c("date", "skip", "numeric", "skip", "skip"), col_names = c("date", "SHADOW_RATE")) # Wu-Xia Shadow Short Rate
+SHADOW_RATE <- read_excel("data/foreign_data/WuXiaShadowRate.xlsx", sheet = 2, skip = 1, col_types = c("date", "skip", "numeric", "skip", "skip"), col_names = c("date", "SHADOW_RATE")) # Wu-Xia Shadow Short Rate
 
 
 #### Combine Macro-Data:
@@ -106,7 +99,7 @@ macro_df <- macro_df %>% select(-INTEREST_RATE)
 
 
 ### Table A8: Statistical Summary
-stargazer(data.frame(macro_df),
+stargazer::stargazer(data.frame(macro_df),
   type = "text", digits = 2,
   summary.stat = c("n", "mean", "sd", "p25", "median", "p75"),
   title = "Summary Statistics Evaluation"
@@ -243,7 +236,7 @@ performance_docs <- performance_docs %>% add_row(model = "No Model", mse = mean(
 #### Loughran and McDonald (2011) --------------
 
 #### Train set
-train <- dfm_train %>% dfm_lookup(dictionary = data_dictionary_LoughranMcDonald) # Dictionary of Loughran and McDonald (2011) via Quanteda-Sentiment
+train <- dfm_train %>% dfm_lookup(dictionary = quanteda.sentiment::data_dictionary_LoughranMcDonald) # Dictionary of Loughran and McDonald (2011) via Quanteda-Sentiment
 date1 <- docvars(dfm_train)
 train <- train %>%
   convert(to = "data.frame") %>%
@@ -257,7 +250,7 @@ train <- train %>%
   na.omit()
 
 #### Test set
-test <- dfm_test %>% dfm_lookup(dictionary = data_dictionary_LoughranMcDonald)
+test <- dfm_test %>% dfm_lookup(dictionary = quanteda.sentiment::data_dictionary_LoughranMcDonald)
 date1 <- docvars(dfm_test)
 test <- test %>%
   convert(to = "data.frame") %>%
@@ -332,7 +325,7 @@ performance <- performance %>% add_row(model = "HD", mse = mse)
 #### Hu, Lui (2004) Sentiment --------------
 
 #### Train set
-train <- dfm_train %>% dfm_lookup(dictionary = data_dictionary_HuLiu)
+train <- dfm_train %>% dfm_lookup(dictionary = quanteda.sentiment::data_dictionary_HuLiu)
 date1 <- docvars(dfm_train)
 train <- train %>%
   convert(to = "data.frame") %>%
@@ -347,7 +340,7 @@ train <- train %>%
   na.omit()
 
 #### Test set
-test <- dfm_test %>% dfm_lookup(dictionary = data_dictionary_HuLiu)
+test <- dfm_test %>% dfm_lookup(dictionary = quanteda.sentiment::data_dictionary_HuLiu)
 date1 <- docvars(dfm_test)
 test <- test %>%
   convert(to = "data.frame") %>%
@@ -374,7 +367,7 @@ performance <- performance %>% add_row(model = "HuLiu", mse = mse)
 #### NRC Word-Emotion Lexicon by Mohammad and Turney (2013) --------------
 
 #### Train set
-train <- dfm_train %>% dfm_lookup(dictionary = data_dictionary_NRC)
+train <- dfm_train %>% dfm_lookup(dictionary = quanteda.sentiment::data_dictionary_NRC)
 date1 <- docvars(dfm_train)
 train <- train %>%
   convert(to = "data.frame") %>%
@@ -386,7 +379,7 @@ train <- train %>%
   na.omit()
 
 #### Test set
-test <- dfm_test %>% dfm_lookup(dictionary = data_dictionary_NRC)
+test <- dfm_test %>% dfm_lookup(dictionary = quanteda.sentiment::data_dictionary_NRC)
 date1 <- docvars(dfm_test)
 test <- test %>%
   convert(to = "data.frame") %>%
@@ -409,7 +402,7 @@ performance <- performance %>% add_row(model = "NRC", mse = mse)
 #### All Dictionaries combined --------------
 
 #### Train set
-train <- dfm_train %>% dfm_lookup(dictionary = c(data_dictionary_NRC, data_dictionary_HuLiu, data_dictionary_LoughranMcDonald, hawk_dove_dic))
+train <- dfm_train %>% dfm_lookup(dictionary = c(quanteda.sentiment::data_dictionary_NRC, quanteda.sentiment::data_dictionary_HuLiu, quanteda.sentiment::data_dictionary_LoughranMcDonald, hawk_dove_dic))
 date1 <- docvars(dfm_train)
 train <- train %>%
   convert(to = "data.frame") %>%
@@ -423,7 +416,7 @@ train <- train %>%
 
 
 #### Test set
-test <- dfm_test %>% dfm_lookup(dictionary = c(data_dictionary_NRC, data_dictionary_HuLiu, data_dictionary_LoughranMcDonald, hawk_dove_dic))
+test <- dfm_test %>% dfm_lookup(dictionary = c(quanteda.sentiment::data_dictionary_NRC, quanteda.sentiment::data_dictionary_HuLiu, quanteda.sentiment::data_dictionary_LoughranMcDonald, hawk_dove_dic))
 date1 <- docvars(dfm_test)
 test <- test %>%
   convert(to = "data.frame") %>%
@@ -452,7 +445,7 @@ performance <- performance %>% add_row(model = "All Dic", mse = mse)
 
 
 ##### GloVe ---------
-glove <- readRDS("embeddings/fullglove10w300.Rds") %>% rename(token = word)
+glove <- readRDS("data/embeddings/fullglove10w300.Rds") %>% rename(token = word)
 train <- function_document_matrix(dfm_train, glove, macro_df) %>%
   select(d.int, starts_with("V")) %>%
   na.omit()
@@ -467,7 +460,7 @@ performance <- performance %>% add_row(model = "GloVe", mse = mse)
 
 
 ##### LDA ---------
-lda <- readRDS("embeddings/lda_word_embedding.rds") %>% rename(token = term)
+lda <- readRDS("data/embeddings/lda_word_embedding.rds") %>% rename(token = term)
 colnames(lda) <- c("token", paste0("V", 1:300))
 train <- function_document_matrix(dfm_train, lda, macro_df) %>%
   select(d.int, starts_with("V")) %>%
@@ -483,7 +476,7 @@ performance <- performance %>% add_row(model = "LDA", mse = mse)
 
 
 ##### Word2Vec Bow --------------------------
-word2vec_bow <- word2vec::read.word2vec("embeddings/fullword2veccbow300.bin")
+word2vec_bow <- word2vec::read.word2vec("data/embeddings/fullword2veccbow300.bin")
 word2vec_bow <- as.matrix(word2vec_bow, which = "words") %>% as_tibble(rownames = "token")
 train <- function_document_matrix(dfm_train, word2vec_bow, macro_df) %>%
   select(d.int, starts_with("V")) %>%
@@ -499,7 +492,7 @@ performance <- performance %>% add_row(model = "word2vec_bow", mse = mse)
 
 
 ##### Word2Vec Skipgram ------------------
-word2vec_skip <- word2vec::read.word2vec("embeddings/fullword2vecskipgram300.bin")
+word2vec_skip <- word2vec::read.word2vec("data/embeddings/fullword2vecskipgram300.bin")
 word2vec_skip <- as.matrix(word2vec_skip, which = "words") %>% as_tibble(rownames = "token")
 train <- function_document_matrix(dfm_train, word2vec_skip, macro_df) %>%
   select(d.int, starts_with("V")) %>%
@@ -516,7 +509,7 @@ performance <- performance %>% add_row(model = "word2vec_skip", mse = mse)
 
 
 ##### Doc2vec PVDM -----------------------
-doc2vec_pvdm <- doc2vec::read.paragraph2vec(file = "embeddings/fulldoc2vecPVDM300.bin")
+doc2vec_pvdm <- doc2vec::read.paragraph2vec(file = "data/embeddings/fulldoc2vecPVDM300.bin")
 doc2vec_pvdm <- as.matrix(doc2vec_pvdm, which = "words") %>% as_tibble(rownames = "token")
 train <- function_document_matrix(dfm_train, doc2vec_pvdm, macro_df) %>%
   select(d.int, starts_with("V")) %>%
@@ -534,7 +527,7 @@ performance <- performance %>% add_row(model = "doc2vec_pvdm", mse = mse)
 
 
 ##### Doc2vec BOW ----------------------
-doc2vec_bow <- doc2vec::read.paragraph2vec(file = "embeddings/fulldoc2vecPVDBOW300.bin")
+doc2vec_bow <- doc2vec::read.paragraph2vec(file = "data/embeddings/fulldoc2vecPVDBOW300.bin")
 doc2vec_bow <- as.matrix(doc2vec_bow, which = "words") %>% as_tibble(rownames = "token")
 train <- function_document_matrix(dfm_train, doc2vec_bow, macro_df) %>%
   select(d.int, starts_with("V")) %>%
@@ -552,7 +545,7 @@ performance <- performance %>% add_row(model = "doc2vec_bow", mse = mse)
 
 
 ##### Doc2vec BOW Pre ---------------------
-doc2vec_bowpre <- doc2vec::read.paragraph2vec(file = "embeddings/fulldoc2vecPVDBOWpre300.bin")
+doc2vec_bowpre <- doc2vec::read.paragraph2vec(file = "data/embeddings/fulldoc2vecPVDBOWpre300.bin")
 doc2vec_bowpre <- as.matrix(doc2vec_bowpre, which = "words") %>% as_tibble(rownames = "token")
 train <- function_document_matrix(dfm_train, doc2vec_bowpre, macro_df) %>%
   select(d.int, starts_with("V")) %>%
@@ -568,7 +561,7 @@ performance <- performance %>% add_row(model = "doc2vec_bow_pre", mse = mse)
 
 
 ##### Doc2vec PVDM Pre --------------------
-doc2vec_pvdm_pre <- doc2vec::read.paragraph2vec(file = "embeddings/fulldoc2vecPVDMpre300.bin")
+doc2vec_pvdm_pre <- doc2vec::read.paragraph2vec(file = "data/embeddings/fulldoc2vecPVDMpre300.bin")
 doc2vec_pvdm_pre <- as.matrix(doc2vec_pvdm_pre, which = "words") %>% as_tibble(rownames = "token")
 train <- function_document_matrix(dfm_train, doc2vec_pvdm_pre, macro_df) %>%
   select(d.int, starts_with("V")) %>%
@@ -585,8 +578,8 @@ performance <- performance %>% add_row(model = "doc2vec_pvdm_pre", mse = mse)
 
 
 ##### GloVe pretrain ---------------------
-# glove6b = textdata::embedding_glove6b(dimensions = 300, manual_download = T) # download zip file at https://nlp.stanford.edu/data/glove.6B.zip and paste zip file at "/Users/johanneszahner/Library/Caches/textdata/glove6b"
-glove6b <- readRDS("/Users/johanneszahner/Library/Caches/textdata/glove6b/glove_6b_300.rds")
+# glove6b = textdata::embedding_glove6b(dimensions = 300, manual_download = T) # download zip file at https://nlp.stanford.edu/data/glove.6B.zip and paste zip file at "your_path/"
+# glove6b <- readRDS("your_path/glove_6b_300.rds")
 colnames(glove6b) <- c("token", paste0("V", 1:300))
 train <- function_document_matrix(dfm_train, glove6b, macro_df) %>%
   select(d.int, starts_with("V")) %>%
@@ -602,7 +595,7 @@ performance <- performance %>% add_row(model = "glove6B", mse = mse)
 
 
 ##### Word2Vec pretrain ------------------
-word2vec_google <- read_table2("embeddings/GoogleNews-vectors-negative300-SLIM.txt", col_names = FALSE, skip = 1)
+word2vec_google <- read_table2("data/embeddings/GoogleNews-vectors-negative300-SLIM.txt", col_names = FALSE, skip = 1)
 word2vec_google <- word2vec_google %>% .[-234111, ] # remove word INVICTUS because of data error
 colnames(word2vec_google) <- c("token", paste0("V", 1:300))
 train <- function_document_matrix(dfm_train, word2vec_google, macro_df) %>%
@@ -636,7 +629,7 @@ testing_docs <- tibble(doc_id = docid(dfm_test), date = docvars(dfm_test)$quarte
 
 
 ##### LDA ------------------------
-lda <- readRDS("embeddings/lda_doc_embedding.rds") %>% rename(doc_id = document)
+lda <- readRDS("data/embeddings/lda_doc_embedding.rds") %>% rename(doc_id = document)
 train <- training_docs %>%
   left_join(lda) %>%
   select(d.int, starts_with("V")) %>%
@@ -653,7 +646,7 @@ performance_docs <- performance_docs %>% add_row(model = "lda", mse = mse)
 
 
 ##### Doc2Vec PVD BOW -----------------
-doc2vec_bow <- doc2vec::read.paragraph2vec(file = "embeddings/fulldoc2vecPVDBOW300.bin")
+doc2vec_bow <- doc2vec::read.paragraph2vec(file = "data/embeddings/fulldoc2vecPVDBOW300.bin")
 doc2vec_bow <- as.matrix(doc2vec_bow, which = "docs") %>% as_tibble(rownames = "doc_id")
 train <- training_docs %>%
   left_join(doc2vec_bow) %>%
@@ -671,7 +664,7 @@ performance_docs <- performance_docs %>% add_row(model = "doc2vec_bow", mse = ms
 
 
 ##### Doc2Vec PVD BOW Pre ---------------
-doc2vec_bow_pre <- doc2vec::read.paragraph2vec(file = "embeddings/fulldoc2vecPVDBOWpre300.bin")
+doc2vec_bow_pre <- doc2vec::read.paragraph2vec(file = "data/embeddings/fulldoc2vecPVDBOWpre300.bin")
 doc2vec_bow_pre <- as.matrix(doc2vec_bow_pre, which = "docs") %>% as_tibble(rownames = "doc_id")
 train <- training_docs %>%
   left_join(doc2vec_bow_pre) %>%
@@ -689,7 +682,7 @@ performance_docs <- performance_docs %>% add_row(model = "doc2vec_bow_pre", mse 
 
 
 ##### Doc2Vec PVDM ---------------
-doc2vec_pvdm <- doc2vec::read.paragraph2vec(file = "embeddings/fulldoc2vecPVDM300.bin")
+doc2vec_pvdm <- doc2vec::read.paragraph2vec(file = "data/embeddings/fulldoc2vecPVDM300.bin")
 doc2vec_pvdm <- as.matrix(doc2vec_pvdm, which = "docs") %>% as_tibble(rownames = "doc_id")
 train <- training_docs %>%
   left_join(doc2vec_pvdm) %>%
@@ -707,7 +700,7 @@ performance_docs <- performance_docs %>% add_row(model = "doc2vec_pvdm", mse = m
 
 
 ##### Doc2Vec PVDM Pre ---------------
-doc2vec_pvdm_pre <- doc2vec::read.paragraph2vec(file = "embeddings/fulldoc2vecPVDMpre300.bin")
+doc2vec_pvdm_pre <- doc2vec::read.paragraph2vec(file = "data/embeddings/fulldoc2vecPVDMpre300.bin")
 doc2vec_pvdm_pre <- as.matrix(doc2vec_pvdm_pre, which = "docs") %>% as_tibble(rownames = "doc_id")
 train <- training_docs %>%
   left_join(doc2vec_pvdm) %>%

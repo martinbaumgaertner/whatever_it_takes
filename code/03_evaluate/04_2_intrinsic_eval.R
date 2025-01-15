@@ -19,17 +19,9 @@
 
 # Preparation ------------------------------------------------------------------
 
-
-###### Remove all objects from the current workspace
-rm(list = ls())
-
-##### Set the working directory to the location of the current script
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-
-##### Source a setup script
-source("00_setup.R")
-
-
+library(tidyverse)
+library(doc2vec)
+library(textdata)
 
 
 
@@ -38,22 +30,23 @@ source("00_setup.R")
 # Data -------------------------------------------------------------------------
 
 #### Our pre-trained Word Embeddings
-doc2vec <- read.paragraph2vec("/Users/johanneszahner/Research/Whatever_it_takes/data/embeddings/fulldoc2vecPVDBOWpre300.bin") %>% as.matrix(which = "words")
+doc2vec <- read.paragraph2vec("data/embeddings/fulldoc2vecPVDBOWpre300.bin") %>% as.matrix(which = "words")
 
 
 #### Our pre-trained Document Embeddings
-doc_embedding <- read.paragraph2vec("/Users/johanneszahner/Research/Whatever_it_takes/data/embeddings/fulldoc2vecPVDBOWpre300.bin") %>% as.matrix(which = "docs")
+doc_embedding <- read.paragraph2vec("data/embeddings/fulldoc2vecPVDBOWpre300.bin") %>% as.matrix(which = "docs")
 doc_embedding <- as_tibble(doc_embedding, rownames = "doc_id") %>% filter(grepl("doc_", doc_id))
 
 
 ##### GloVe6B
-glove <- embedding_glove6b(dimensions = 300) %>%
+# You might need to install the glove package from http://nlp.stanford.edu/data/glove.6B.zip. See return_path at https://www.rdocumentation.org/packages/textdata/versions/0.4.4/topics/embedding_glove
+glove <- embedding_glove6b(dimensions = 300, manual_download = TRUE) %>%
   column_to_rownames(var = "token") %>%
   as.matrix()
 
 
 ##### GoogleNews
-google <- read_table2("/Users/johanneszahner/Research/_For later/shiny_whatever_it_takes (Martin Baumgärtner)/shiny_word_embeddings/Shiny_word_embeddings/data/models/GoogleNews-vectors-negative300-SLIM.txt", col_names = FALSE, skip = 1)
+google <- read_table2("data/embeddings/GoogleNews-vectors-negative300-SLIM.txt", col_names = FALSE, skip = 1)
 google <- google %>% .[-234111, ] # remove word INVICTUS because of data error
 google <- google %>%
   rename_at(vars(paste0("X", 2:301)), function(x) paste0("V", 1:300)) %>%
@@ -64,9 +57,9 @@ google <- google %>%
 
 
 #### Speech-data
-dataset <- readRDS("corpus/dataset.Rds")
+dataset <- readRDS("data/processed/text_data.Rds")
 dataset$year <- dataset$date %>% floor_date("year")
-dataset$ISO3 <- countrycode(sourcevar = dataset$country, origin = "country.name", destination = "iso3c")
+dataset$ISO3 <- countrycode::countrycode(sourcevar = dataset$country, origin = "country.name", destination = "iso3c")
 dataset <- dataset %>% mutate(ISO3 = if_else(country == "Euro area", "EUR", ISO3))
 dataset <- dataset %>%
   select(ISO3, year, doc_id) %>%
@@ -75,9 +68,9 @@ dataset <- dataset %>%
 
 ##### Worldmap Data
 world_raw <- map_data("world") # Load world map data
-name_iso <- codelist %>% select(region = country.name.en, ISO2 = iso2c, ISO3 = iso3c) # Select relevant country codes from codelist
+name_iso <- countrycode::codelist %>% select(region = country.name.en, ISO2 = iso2c, ISO3 = iso3c) # Select relevant country codes from codelist
 world_raw <- world_raw %>% left_join(name_iso) # Join map data with country codes
-world_raw <- world_raw %>% mutate(ISO3 = if_else(is.na(ISO3), countrycode(sourcevar = region, origin = "country.name", destination = "iso3c"), ISO3))
+world_raw <- world_raw %>% mutate(ISO3 = if_else(is.na(ISO3), countrycode::countrycode(sourcevar = region, origin = "country.name", destination = "iso3c"), ISO3))
 
 
 
@@ -101,7 +94,7 @@ top_embeddings <- function(models, word, n_output) {
     } else {
       input_vector <- as.matrix(t(model[rownumber, ]))
 
-      output[[name]] <- as_tibble(sim2(model, input_vector), rownames = "Word") %>%
+      output[[name]] <- as_tibble(text2vec::sim2(model, input_vector), rownames = "Word") %>%
         arrange(desc(V1)) %>%
         slice(-1) %>%
         top_n(n_output, V1) %>%
@@ -159,7 +152,7 @@ similarity <- similarity %>%
 similarity <- similarity %>%
   select(ISO3, dimension, value) %>%
   na.omit()
-similarity <- similarity %>% pairwise_similarity(ISO3, dimension, value)
+similarity <- similarity %>% widyr::pairwise_similarity(ISO3, dimension, value)
 similarity <- similarity %>%
   select(target_country = item1, ISO3 = item2, everything()) %>%
   ungroup()

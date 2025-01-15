@@ -1,4 +1,3 @@
-
 # Description ------------------------------------------------------------------
 #
 # Title: Corpus Summary
@@ -28,44 +27,50 @@ dataset <- readRDS("data/processed/text_data.Rds") # Load speech data from an RD
 
 # Select relevant country codes from codelist
 name_iso <- countrycode::codelist %>% select(region = country.name.en, ISO2 = iso2c, ISO3 = iso3c)
-world_raw <- map_data("world") %>% tibble() %>% left_join(name_iso)
+world_raw <- map_data("world") %>%
+  tibble() %>%
+  left_join(name_iso)
 
 #### Merge Map Data and Corpus Data
 
 # Count the number of speeches per country code
 data_map <- dataset %>%
-count(country_code) %>% 
-rename("ISO2" = country_code) 
+  count(country_code) %>%
+  rename("ISO2" = country_code)
 
 map <- world_raw %>%
-left_join(data_map) %>% 
-# Create a binary variable indicating if a country is in the corpus
-mutate(n = factor(if_else(is.na(n), "No", "Yes"))) %>%
-unique()
+  left_join(data_map) %>%
+  # Create a binary variable indicating if a country is in the corpus
+  mutate(n = factor(if_else(is.na(n), "No", "Yes"))) %>%
+  unique()
 
 # Descriptive Statistics -------------------------------------------------------
 
 
 ###### Corpus Summary Statistics
 # TODO: Check with Johannes for differences
-dataset %>% nrow()                     # 21,916 speeches
-dataset %>% count(cb) %>% nrow()       # 128 central banks
-dataset %>% count(speaker) %>% nrow()  # 892 central bankers
-dataset$nwords %>% sum()               # 112,770,492 words
+dataset %>% nrow() # 21,916 speeches
+dataset %>%
+  count(cb) %>%
+  nrow() # 128 central banks
+dataset %>%
+  count(speaker) %>%
+  nrow() # 892 central bankers
+dataset$nwords %>% sum() # 112,770,492 words
 
 
-pop <- map %>% 
-select(region, ISO2, ISO3, n) %>% 
-distinct() %>% 
-left_join(gapminder::gapminder %>% filter(year == 2007), by = c("region" = "country")) %>%
-na.omit()
+pop <- map %>%
+  select(region, ISO2, ISO3, n) %>%
+  distinct() %>%
+  left_join(gapminder::gapminder %>% filter(year == 2007), by = c("region" = "country")) %>%
+  na.omit()
 
 
 ##### Population covered in our corpus
 pop$pop %>% sum() # World population <- 5625941443
-pop %>% 
-group_by(in_corpus = n) %>% 
-summarise(pop = sum(pop) / 5625941443 * 100)
+pop %>%
+  group_by(in_corpus = n) %>%
+  summarise(pop = sum(pop) / 5625941443 * 100)
 # `In Corpus`   pop
 # 1 Yes         82.9
 # 2 No          17.1
@@ -75,8 +80,8 @@ summarise(pop = sum(pop) / 5625941443 * 100)
 pop$GDP <- pop$gdpPercap * pop$pop # Calculate GDP for each country
 pop$GDP %>% sum() # World GDP <- 4.113013e+13
 pop %>%
-group_by(in_corpus <- n) %>%
-summarise(gdp <- sum(gdp) / 4.113013e+13 * 100)
+  group_by(in_corpus <- n) %>%
+  summarise(gdp <- sum(gdp) / 4.113013e+13 * 100)
 #     `In Corpus`   GDP
 # 1   Yes           89.5
 # 2   No            10.5
@@ -87,13 +92,17 @@ summarise(gdp <- sum(gdp) / 4.113013e+13 * 100)
 
 ###### Top 10:
 dataset %>%
-count(cb) %>%
-arrange(-n) %>%
-mutate(nn <- n / sum(n) * 100) %>%
-top_n(10, n)
+  count(cb) %>%
+  arrange(-n) %>%
+  mutate(nn <- n / sum(n) * 100) %>%
+  top_n(10, n)
 
 ###### Bottom:
-dataset %>% count(cb) %>% arrange(n) %>% mutate(nn <- n / sum(n) * 100) %>% .[1, ]
+dataset %>%
+  count(cb) %>%
+  arrange(n) %>%
+  mutate(nn <- n / sum(n) * 100) %>%
+  .[1, ]
 
 
 # Figure 3: Properties of the Text corpus --------------------------------------
@@ -121,7 +130,8 @@ map %>%
 
 
 ####### Plot 2: Type of documents / Number of speeches
-dataset %>% count(type = type == "speech") %>%
+dataset %>%
+  count(type = type == "speech") %>%
   mutate(type = if_else(type == FALSE, "Other", "Speech")) %>%
   ggplot(aes(n, type, fill = type)) +
   scale_fill_manual(values = c("#C49A00", "#00B6EB")) +
@@ -138,8 +148,9 @@ dataset %>%
 
 
 ####### Plot 4: Temporal Variation
-dataset %>% count(year = year(date)) %>%
-  filter(year > 1950, year < 2025)  %>%
+dataset %>%
+  count(year = year(date)) %>%
+  filter(year > 1950, year < 2025) %>%
   ggplot(aes(year, n)) +
   geom_col(fill = "#C49A00") +
   labs(y = "Number of Documents", x = "")

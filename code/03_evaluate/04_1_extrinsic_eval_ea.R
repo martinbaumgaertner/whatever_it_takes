@@ -28,7 +28,9 @@
 # Preparation ------------------------------------------------------------------
 
 library(fredr)
-#https://fredaccount.stlouisfed.org/apikeys
+library(tidyverse)
+library(tidytext)
+# https://fredaccount.stlouisfed.org/apikeys
 fredr_set_key("your_key_here")
 library(quanteda)
 library(caret)
@@ -39,9 +41,9 @@ library(caret)
 
 ##### Load Speech-data
 dataset <- readRDS("data/processed/text_data.Rds") %>%
-filter(cb == "European Central Bank", language == "en", date < "2021-12-31", date > "2000-01-01") %>%
-mutate(quarter = floor_date(date, "month")) %>%
-select(quarter, doc_id, text)
+  filter(cb == "European Central Bank", language == "en", date < "2021-12-31", date > "2000-01-01") %>%
+  mutate(quarter = floor_date(date, "month")) %>%
+  select(quarter, doc_id, text)
 
 #### Document IDs with corresponding dates
 docid_date <- dataset %>% select(date = quarter, doc_id)
@@ -227,7 +229,7 @@ test <- test %>%
   mutate(SENTIMENT = (NEGATIVE - POSITIVE) / (NEGATIVE + POSITIVE)) %>%
   select(SENTIMENT, NEGATIVE, POSITIVE) %>%
   tibble() %>%
-  mutate(date = as.Date(date1$quarter)) %>% 
+  mutate(date = as.Date(date1$quarter)) %>%
   left_join(macro_df, by = "date") %>%
   select(date, d.int, SENTIMENT, NEGATIVE, POSITIVE) %>%
   na.omit()
@@ -519,8 +521,8 @@ performance <- performance %>% add_row(model = "doc2vec_pvdm_pre", mse = mse)
 
 
 ##### GloVe pretrain ---------------------
-# glove6b = textdata::embedding_glove6b(dimensions = 300, manual_download = T) # download zip file at https://nlp.stanford.edu/data/glove.6B.zip and paste zip file at "/Users/johanneszahner/Library/Caches/textdata/glove6b"
-#glove6b <- readRDS("/Users/johanneszahner/Library/Caches/textdata/glove6b/glove_6b_300.rds")
+# glove6b = textdata::embedding_glove6b(dimensions = 300, manual_download = T) # download zip file at https://nlp.stanford.edu/data/glove.6B.zip and paste zip file at "your_path/"
+# glove6b <- readRDS("your_path/glove_6b_300.rds")
 colnames(glove6b) <- c("token", paste0("V", 1:300))
 train <- function_document_matrix(dfm_train, glove6b, macro_df) %>%
   select(d.int, starts_with("V")) %>%

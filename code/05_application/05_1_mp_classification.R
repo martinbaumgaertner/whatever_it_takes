@@ -18,6 +18,11 @@
 #   4. Access to the Monetary Frameworks Database by Cobham (2021), available here
 #   (last accessed: 01.10.2023): https://monetaryframeworks.org
 
+library(tidyverse)
+library(doc2vec)
+library(readxl)
+library(fredr)
+
 
 # Data Collection --------------------------------------------------------------
 
@@ -25,14 +30,14 @@
 ## 1) Similarity -----------
 
 ###### Pre-trained Document Embeddings
-doc_embedding <- read.paragraph2vec("/Users/johanneszahner/Research/Whatever_it_takes/data/embeddings/fulldoc2vecPVDBOWpre300.bin") %>% as.matrix(which = "docs")
+doc_embedding <- read.paragraph2vec("data/embeddings/fulldoc2vecPVDBOWpre300.bin") %>% as.matrix(which = "docs")
 doc_embedding <- as_tibble(doc_embedding, rownames = "doc_id")
 
 
 #### Prepare Speech-data
-corpus <- readRDS("corpus/dataset.Rds")
+corpus <- readRDS("data/processed/text_data.Rds")
 corpus <- corpus %>% filter(type == "speech")
-corpus$ISO3 <- countrycode(sourcevar = corpus$country, origin = "country.name", destination = "iso3c")
+corpus$ISO3 <- countrycode::countrycode(sourcevar = corpus$country, origin = "country.name", destination = "iso3c")
 corpus <- corpus %>% mutate(ISO3 = if_else(country == "Euro area", "EUR", ISO3))
 corpus$year <- floor_date(corpus$date, "year")
 corpus <- corpus %>% select(ISO3, year, doc_id)
@@ -54,7 +59,7 @@ similarity <- similarity %>%
   group_by(year) %>%
   select(ISO3, dimension, value) %>%
   na.omit()
-similarity <- similarity %>% pairwise_similarity(ISO3, dimension, value)
+similarity <- similarity %>% widyr::pairwise_similarity(ISO3, dimension, value)
 similarity <- similarity %>%
   select(target_country = item1, ISO3 = item2, everything()) %>%
   ungroup()
@@ -68,34 +73,34 @@ similarity <- similarity %>% filter(year >= "1999-01-01")
 
 
 ###### Cobham's Targets
-cobham <- read_excel("Cobham (2021)/mpfclassificationdata_revjul19.xlsx", sheet = 7, range = "A1:AS63")
-cobham_africa <- read_excel("Cobham (2021)/africaclassificationdecember2021.xlsx", sheet = 2, range = "A1:AS55")
-cobham_latinam <- read_excel("Cobham (2021)/latamclassificationfeb2020.xlsx", sheet = 2, range = "A1:AS23")
-cobham_asia <- read_excel("Cobham (2021)/asiaedclassificationaugust2020.xlsx", sheet = 2, range = "A1:AS26")
-cobham_mena <- read_excel("Cobham (2021)/menaclassificationjul2019.xlsx", sheet = 2, range = "A1:AS20")
+cobham <- read_excel("data/foreign_data/cobham/mpfclassificationdata_revjul19.xlsx", sheet = 7, range = "A1:AS63")
+cobham_africa <- read_excel("data/foreign_data/cobham/africaclassificationdecember2021.xlsx", sheet = 2, range = "A1:AS55")
+cobham_latinam <- read_excel("data/foreign_data/cobham/latamclassificationfeb2020.xlsx", sheet = 2, range = "A1:AS23")
+cobham_asia <- read_excel("data/foreign_data/cobham/asiaedclassificationaugust2020.xlsx", sheet = 2, range = "A1:AS26")
+cobham_mena <- read_excel("data/foreign_data/cobham/menaclassificationjul2019.xlsx", sheet = 2, range = "A1:AS20")
 cobham_target <- rbind(cobham, cobham_africa, cobham_latinam, cobham_asia, cobham_mena)
 cobham_target <- cobham_target %>% select(country = ...1, everything())
 cobham_target <- cobham_target %>% pivot_longer(-c(country), values_to = "cobham_target", names_to = "year")
 
 
 ###### Cobham's MP Framework
-cobham <- read_excel("Cobham (2021)/mpfclassificationdata_revjul19.xlsx", sheet = 6, range = "A1:AS63")
-cobham_africa <- read_excel("Cobham (2021)/africaclassificationdecember2021.xlsx", sheet = 1, range = "A1:AS55")
-cobham_latinam <- read_excel("Cobham (2021)/latamclassificationfeb2020.xlsx", sheet = 1, range = "A1:AS23")
-cobham_asia <- read_excel("Cobham (2021)/asiaedclassificationaugust2020.xlsx", sheet = 1, range = "A1:AS26")
-cobham_mena <- read_excel("Cobham (2021)/menaclassificationjul2019.xlsx", sheet = 1, range = "A1:AS20")
+cobham <- read_excel("data/foreign_data/cobham/mpfclassificationdata_revjul19.xlsx", sheet = 6, range = "A1:AS63")
+cobham_africa <- read_excel("data/foreign_data/cobham/africaclassificationdecember2021.xlsx", sheet = 1, range = "A1:AS55")
+cobham_latinam <- read_excel("data/foreign_data/cobham/latamclassificationfeb2020.xlsx", sheet = 1, range = "A1:AS23")
+cobham_asia <- read_excel("data/foreign_data/cobham/asiaedclassificationaugust2020.xlsx", sheet = 1, range = "A1:AS26")
+cobham_mena <- read_excel("data/foreign_data/cobham/menaclassificationjul2019.xlsx", sheet = 1, range = "A1:AS20")
 cobham_framework <- rbind(cobham, cobham_africa, cobham_latinam, cobham_asia, cobham_mena)
 cobham_framework <- cobham_framework %>% select(country = ...1, everything())
 cobham_framework <- cobham_framework %>% pivot_longer(-c(country), values_to = "cobham_framework", names_to = "year")
 
 
 ######## Final Dataset
-cobham <- cobham_target %>% left_join(cobham_framework)
+cobham <- cobham_target %>% left_join(cobham_framework, by = c("country", "year"))
 cobham$year <- ymd(paste0(cobham$year, "-01-01"))
 
 
 ###### Add and correct ISO3 country codes
-cobham$ISO3 <- countrycode(sourcevar = cobham$country, origin = "country.name", destination = "iso3c")
+cobham$ISO3 <- countrycode::countrycode(sourcevar = cobham$country, origin = "country.name", destination = "iso3c")
 cobham <- cobham %>% mutate(ISO3 = if_else(country == "Euro area", "EUR", ISO3))
 cobham <- cobham %>% mutate(ISO3 = if_else(country == "SKorea", "KOR", ISO3))
 cobham <- cobham %>% mutate(ISO3 = if_else(country == "Equatorial Giunea", "GNQ", ISO3))
@@ -125,7 +130,7 @@ cobham$cobham_framework_IT.regime <- if_else(cobham$cobham_framework %in% c("FIT
 
 
 ####### Inflation Rate
-CPI <- read_csv("World Bank Development Indicators/CPI.csv", skip = 3) %>% select(ISO3 = `Country Code`, "1960":"2022")
+CPI <- read_csv("data/foreign_data/world_bank/CPI.csv", skip = 3) %>% select(ISO3 = `Country Code`, "1960":"2022")
 CPI <- CPI %>% pivot_longer(-c(ISO3), names_to = "year", values_to = "CPI")
 CPI$year <- paste(CPI$year, "-01-01") %>% ymd()
 CPI.EA <- fredr(c("FPCPITOTLZGEMU")) %>% select(year = date, CPI = value)
@@ -134,7 +139,7 @@ CPI <- CPI %>% rbind(CPI.EA)
 
 
 ###### Unemployment Rate
-UNRATE <- read_csv("World Bank Development Indicators/UNRATE.csv", skip = 3) %>% select(ISO3 = `Country Code`, "1960":"2022")
+UNRATE <- read_csv("data/foreign_data/world_bank/UNRATE.csv", skip = 3) %>% select(ISO3 = `Country Code`, "1960":"2022")
 UNRATE <- UNRATE %>% pivot_longer(-c(ISO3), names_to = "year", values_to = "UNRATE")
 UNRATE$year <- paste(UNRATE$year, "-01-01") %>% ymd()
 UNRATE.EA <- fredr(c("LRHUTTTTEZA156S")) %>% select(year = date, UNRATE = value)
@@ -143,7 +148,7 @@ UNRATE <- UNRATE %>% rbind(UNRATE.EA)
 
 
 ####### GDP
-GDP <- read_csv("World Bank Development Indicators/GDP.csv", skip = 3) %>% select(ISO3 = `Country Code`, "1960":"2022")
+GDP <- read_csv("data/foreign_data/world_bank/GDP.csv", skip = 3) %>% select(ISO3 = `Country Code`, "1960":"2022")
 GDP <- GDP %>% pivot_longer(-c(ISO3), names_to = "year", values_to = "GDP")
 GDP$year <- paste(GDP$year, "-01-01") %>% ymd()
 GDP.EA <- fredr(c("LRHUTTTTEZA156S")) %>% select(year = date, GDP = value)
@@ -159,7 +164,7 @@ economic_indicator <- CPI %>%
 
 ##### Variable Transformations
 funct <- function(variable) {
-  variable <- na.locf(variable, fromLast = F, na.rm = F)
+  variable <- zoo::na.locf(variable, fromLast = F, na.rm = F)
 } # Fill variables
 economic_indicator <- economic_indicator %>%
   group_by(ISO3) %>%
@@ -226,7 +231,7 @@ summary_statistic <- summary_statistic %>%
 summary_statistic <- summary_statistic %>%
   select(-c(year, ISO3)) %>%
   as.data.frame()
-summary_statistic %>% stargazer(type = "text")
+summary_statistic %>% stargazer::stargazer(type = "text")
 
 #### Economy Specific Data set
 nz <- similarity %>%
@@ -247,7 +252,7 @@ ea <- similarity %>%
 
 
 #### Table A11
-stargazer(summary_statistic, nz, us, ea, type = "text", digits = 2, summary.stat = c("n", "mean", "sd", "p25", "median", "p75"), title = "Summary Statistics Main Reg. 1")
+stargazer::stargazer(summary_statistic, nz, us, ea, type = "text", digits = 2, summary.stat = c("n", "mean", "sd", "p25", "median", "p75"), title = "Summary Statistics Main Reg. 1")
 
 
 
@@ -292,7 +297,7 @@ reg_results[["C4"]] <- similarity %>%
 
 
 ##### Table 5: Regression results: Monetary Policy Regime classification
-stargazer(reg_results,
+stargazer::stargazer(reg_results,
   type = "text", no.space = T, omit.stat = c("f", "ser"), digits = 2, column.labels = c("RBNZ", "Fed", "ECB"), column.separate = c(3, 3, 3),
   keep = c("cobham_targetITs", "cobham_framework_IT.regimeFIT", "cobham_framework_IT.regimeLIT", "cobham_framework_IT.regimeFCIT", "cobham_framework_IT.regimeLCIT", "Constant"),
   dep.var.caption = "Similarity", dep.var.labels.include = F, add.lines = list(c("Macro-controls", rep(c("No", "Yes", "Yes"), 4)), c("Year Fixed Effects", rep("Yes", 12)))
@@ -302,7 +307,7 @@ stargazer(reg_results,
 
 
 ##### Table A12: Regression results: Monetary Policy Framework classification
-stargazer(reg_results,
+stargazer::stargazer(reg_results,
   type = "text", no.space = T, omit.stat = c("f", "ser"), digits = 2, column.labels = c("RBNZ", "Fed", "ECB"), column.separate = c(3, 3, 3),
   keep = c("cobham_target", "cobham_framework", "cobham_framework_IT.regime", "Constant"), dep.var.caption = "Similarity", dep.var.labels.include = F,
   add.lines = list(c("Macro-controls", rep(c("No", "Yes", "Yes"), 4)), c("Year Fixed Effects", rep("Yes", 12)))

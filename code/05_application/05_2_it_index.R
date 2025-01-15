@@ -46,19 +46,15 @@
 
 # Preparation ------------------------------------------------------------------
 
-
-###### Remove all objects from the current workspace
-rm(list = ls())
-
-##### Set the working directory to the location of the current script
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-
-##### Source a setup script
-source("00_setup.R")
-
+library(tidyverse)
+library(interactions)
+library(quanteda)
+library(readxl)
+library(doc2vec)
+library(sweater)
+library(fredr)
 #### Load FRED API key
 # fredr_set_key("YOUR.API.KEY")
-fredr_set_key("7ee0a21e52a49087385d38a4aab92f67")
 
 
 ##### Hawkish/Dovish Dictionary
@@ -68,15 +64,11 @@ hawk_dove_dic <- dictionary(list(
 ))
 
 
-
-
-
-
 # Part 1: IT Index (Inflation Targeting Index) ---------------------------------
 
 
 ##### Cobham (2021) Data (Monetary Policy Framework Classifications)
-cobham_target <- read_excel("Cobham (2021)/mpfclassificationdata_revjul19.xlsx", sheet = 6, range = "A1:AS63")
+cobham_target <- read_excel("data/foreign_data/cobham/mpfclassificationdata_revjul19.xlsx", sheet = 6, range = "A1:AS63")
 cobham_target <- cobham_target %>% select(country = ...1, everything())
 cobham_target <- cobham_target %>%
   mutate(country = recode(str_trim(country),
@@ -94,7 +86,7 @@ cobham_target <- cobham_target %>%
 
 
 #### Central Bank Communication Corpus
-corpus <- readRDS("corpus/dataset.Rds")
+corpus <- readRDS("data/processed/text_data.Rds")
 corpus <- corpus %>% filter(type == "speech")
 corpus <- corpus %>% select(country, date, doc_id, speaker)
 corpus$year <- floor_date(corpus$date, "year")
@@ -106,7 +98,7 @@ corpus <- corpus %>% mutate(regime = if_else(is.na(regime), "undefined", regime)
 
 
 ###### Pre-trained Document Embeddings
-doc_embedding <- read.paragraph2vec("/Users/johanneszahner/Research/Whatever_it_takes/data/embeddings/fulldoc2vecPVDBOWpre300.bin") %>% as.matrix(which = "docs")
+doc_embedding <- read.paragraph2vec("data/embeddings/fulldoc2vecPVDBOWpre300.bin") %>% as.matrix(which = "docs")
 doc_ids <- corpus %>%
   filter(regime == "LIT" | regime == "FIT" | country == "United States") %>%
   pull(doc_id)
@@ -168,15 +160,6 @@ plot_IT %>%
 
 
 
-
-
-
-
-
-
-
-
-
 # Part 2: Kohn/Dudley Example --------------------------------------------------
 # This section examines two specific speeches, one by Donald Kohn (associated with
 # Fixed Inflation Targeting) and one by William Dudley (associated with
@@ -190,14 +173,14 @@ IT_standardized %>% arrange(-value) # 2nd highest: 2.97 on 2003-02-28 Donald Koh
 
 
 ######### Calculate sentiment/hawkish-dovish stance of the Kohn and Dudley speeches
-dic <- readRDS("corpus/dataset.Rds") %>%
+dic <- readRDS("data/processed/text_data.Rds") %>%
   filter(doc_id %in% c("doc_14949", "doc_7147")) %>%
   select(doc_id, text) %>%
   corpus() %>%
   tokens() %>%
   dfm()
 dic %>%
-  dfm_lookup(dictionary = data_dictionary_LoughranMcDonald) %>%
+  dfm_lookup(dictionary = quanteda.sentiment::data_dictionary_LoughranMcDonald) %>%
   convert(to = "data.frame") %>%
   mutate(SENTIMENT = (NEGATIVE - POSITIVE) / (NEGATIVE + POSITIVE))
 dic %>%
@@ -211,7 +194,7 @@ dic %>%
 
 
 ######## Economic Environment Data (used for context in the speeches)
-SHADOW_RATE <- read_excel("Wu-Xia Shadow Rate/WuXiaShadowRate.xlsx", sheet = 2, skip = 1, col_types = c("date", "skip", "numeric", "skip", "skip"), col_names = c("date", "SHADOW_RATE")) # Wu-Xia Shadow Short Rate
+SHADOW_RATE <- read_excel("data/foreign_data/WuXiaShadowRate.xlsx", sheet = 2, skip = 1, col_types = c("date", "skip", "numeric", "skip", "skip"), col_names = c("date", "SHADOW_RATE")) # Wu-Xia Shadow Short Rate
 SHADOW_RATE <- SHADOW_RATE %>%
   filter(date >= "1980-01-01") %>%
   pull(SHADOW_RATE) %>%
@@ -237,15 +220,6 @@ lm(SHADOW_RATE ~ CPI, df) %>% summary() # negative inflation coefficient
 
 
 
-
-
-
-
-
-
-
-
-
 # Part 3: FIT/LIT specific wordcloud -------------------------------------------
 
 # This section explores the topics within speeches classified as FIT or LIT
@@ -254,8 +228,6 @@ lm(SHADOW_RATE ~ CPI, df) %>% summary() # negative inflation coefficient
 #
 # Attention: Running the LDA model computation can take 10-20 minutes on a
 # modern computer. A pre-trained model (lda_model.rds) is provided for convenience.
-
-
 
 
 
@@ -272,13 +244,13 @@ lm(SHADOW_RATE ~ CPI, df) %>% summary() # negative inflation coefficient
 # model, uncomment the code below. Otherwise, the pre-trained model is loaded.
 # lda_model = LDA(dtm, k = 25, control = list(seed = 1234))
 # saveRDS(lda_model, file = "LDA/lda_model.rds")
-lda_model <- readRDS(file = "LDA/lda_model.rds")
+lda_model <- readRDS(file = "data/helper/lda_model.rds")
 
 
 #### Topic IT distribution
 # This section assigns the most probable topic to each document and joins
 # this information with the IT index values.
-topics <- posterior(lda_model)$topics
+topics <- topicmodels::posterior(lda_model)$topics
 topics <- data.frame(doc_id = rownames(topics), topic = apply(topics, 1, which.max))
 topics <- topics %>% left_join(IT)
 topics <- topics %>% mutate(value_min = if_else(value < median(value), 1, 0))
@@ -289,7 +261,7 @@ topics <- topics %>% mutate(value_min = if_else(value < median(value), 1, 0))
 # index and the identified LDA topics.
 ols1 <- lm(value ~ factor(topic), topics)
 glm1 <- glm(value_min ~ factor(topic), topics, family = "binomial") #  Large RND -> FIT
-stargazer(ols1, glm1, type = "text", omit.stat = c("ser", "f"), digits = 2, no.space = T)
+stargazer::stargazer(ols1, glm1, type = "text", omit.stat = c("ser", "f"), digits = 2, no.space = T)
 
 
 ###### Figure 7: Worldcloud
@@ -305,20 +277,14 @@ lit.fit_topics <- lit.fit_topics %>%
   arrange(topic, -beta)
 lit.fit_topics <- lit.fit_topics %>% filter(!term %in% 1:3000, !term %in% c("url", "vol", "pp"))
 lit.fit_topics %>%
-  acast(term ~ topic, value.var = "beta", fill = 0) %>%
-  comparison.cloud(
+  reshape2::acast(term ~ topic, value.var = "beta", fill = 0) %>%
+  wordcloud::comparison.cloud(
     colors = c("#F8766D", "#00BFC4"),
     title.bg.colors = c("#F8766D30", "#00BFC420"),
     max.words = 75,
     match.colors = TRUE, use.r.layout = TRUE,
     scale = c(2.5, .35)
   )
-
-
-
-
-
-
 
 
 
@@ -406,7 +372,7 @@ D.CPIAUCSL <- df %>%
   ts(start = c(1947, 1), frequency = 12)
 
 # Forward Guidance Shocks (Swanson, 2021, JME)
-FG <- read_xlsx("Swanson (2021)/Swanson 2021.xlsx", skip = 2, col_types = c("date", "numeric", "numeric", "numeric", "numeric"), col_names = c("DATE", "FFR", "FG", "LSAP", "-LSAP"))
+FG <- read_xlsx("data/foreign_data/swanson_2021.xlsx", skip = 2, col_types = c("date", "numeric", "numeric", "numeric", "numeric"), col_names = c("DATE", "FFR", "FG", "LSAP", "-LSAP"))
 FG <- FG %>%
   group_by(months = floor_date(DATE, "month")) %>%
   summarise(FG = mean(FG))
@@ -431,7 +397,7 @@ InfTar <- (InfTar - mean(InfTar)) / sd(InfTar)
 
 
 ###### Dictionaries
-dic <- readRDS("corpus/dataset.Rds") %>%
+dic <- readRDS("data/processed/text_data.Rds") %>%
   filter(country == "United States", date > "1990-01-01", type == "speech") %>%
   select(date, text) %>%
   corpus() %>%
@@ -439,7 +405,7 @@ dic <- readRDS("corpus/dataset.Rds") %>%
   dfm()
 
 # Loughran-McDonald Sentiment
-LM <- dic %>% dfm_lookup(dictionary = data_dictionary_LoughranMcDonald)
+LM <- dic %>% dfm_lookup(dictionary = quanteda.sentiment::data_dictionary_LoughranMcDonald)
 LM <- LM %>%
   convert(to = "data.frame") %>%
   transmute(LM_SENTIMENT = (NEGATIVE - POSITIVE) / (NEGATIVE + POSITIVE), DATE = docvars(LM)$date) %>%
@@ -496,7 +462,7 @@ df <- df %>% na.omit()
 df %>%
   data.frame() %>%
   mutate(EXPINF1YR.abs = abs(EXPINF1YR), EXPINF2YR.abs = abs(EXPINF2YR), EXPINF10YR.abs = abs(EXPINF10YR)) %>%
-  stargazer(type = "text")
+  stargazer::stargazer(type = "text")
 
 
 ###### Table 6: Regression
@@ -517,14 +483,6 @@ stargazer::stargazer(ols, type = "text", omit.stat = c("ser", "f"), digits = 2, 
 
 
 
-
-
-
-
-
-
-
-
 # Part 5: Taylor Rule ----------------------------------------------------------
 
 
@@ -537,7 +495,7 @@ GDP_GAP <- GDP_GAP %>%
   ts(start = c(1980, 1), frequency = 4)
 GDP_GAP <- GDP_GAP %>% log() * 100
 GDP_GAP <- GDP_GAP %>%
-  hpfilter(freq = 1600) %>%
+  mFilter::hpfilter(freq = 1600) %>%
   .$cycle
 
 
@@ -560,7 +518,7 @@ UNRATE <- aggregate(UNRATE, nfrequency = 4, mean)
 
 
 #### Wu-Xia Shadow Short Rate
-SHADOW_RATE <- read_excel("Wu-Xia Shadow Rate/WuXiaShadowRate.xlsx", sheet = 2, skip = 1, col_types = c("date", "skip", "numeric", "skip", "skip"), col_names = c("date", "SHADOW_RATE")) # Wu-Xia Shadow Short Rate
+SHADOW_RATE <- read_excel("data/foreign_data/WuXiaShadowRate.xlsx", sheet = 2, skip = 1, col_types = c("date", "skip", "numeric", "skip", "skip"), col_names = c("date", "SHADOW_RATE")) # Wu-Xia Shadow Short Rate
 SHADOW_RATE <- SHADOW_RATE %>% filter(date >= "1980-01-01")
 SHADOW_RATE <- SHADOW_RATE$SHADOW_RATE %>% ts(start = c(1980, 1), frequency = 12)
 SHADOW_RATE <- aggregate(SHADOW_RATE, nfrequency = 4, mean)
@@ -575,7 +533,7 @@ df <- window(df, start = c(1999, 1), end = c(2020, 1))
 ###### Table A11: Statistical Summary
 df %>%
   data.frame() %>%
-  stargazer(type = "text", digits = 2, summary.stat = c("n", "mean", "sd", "p25", "median", "p75"))
+  stargazer::stargazer(type = "text", digits = 2, summary.stat = c("n", "mean", "sd", "p25", "median", "p75"))
 
 
 ###### Table 7: IT Taylor Rule Regression Table
@@ -620,7 +578,7 @@ ols_robustness <- list()
 
 
 #### Robustness Test 1: Short Shadow Short Rate
-SSR <- read_excel("Krippner (2021)/International_SSR_estimates_NEW_202104.xlsx", sheet = 2, skip = 7, col_types = c("date", "numeric", "skip", "skip", "skip", "skip", "skip", "skip", "skip"), col_names = c("DATE", "INTEREST.RATE"))
+SSR <- read_excel("data/foreign_data/International_SSR_estimates_NEW_202104.xlsx", sheet = 2, skip = 7, col_types = c("date", "numeric", "skip", "skip", "skip", "skip", "skip", "skip", "skip"), col_names = c("DATE", "INTEREST.RATE"))
 SSR <- SSR$INTEREST.RATE %>% ts(start = c(1995, 1), frequency = 12)
 SSR <- aggregate(SSR, nfrequency = 4, mean)
 df <- cbind(IT = IT_ts, SSR, CPI, UNRATE, GDP_GAP)
@@ -650,7 +608,7 @@ ols_robustness[["Speaker"]] <- lm(SHADOW_RATE ~ CPI * lag(IT) + UNRATE * lag(IT)
 
 
 ######## Robustness Test 3: Textual Sentiment Analysis (Dictionaries)
-dic <- readRDS("corpus/dataset.Rds") %>%
+dic <- readRDS("data/processed/text_data.Rds") %>%
   filter(country == "United States", date > "1990-01-01", type == "speech") %>%
   select(date, text) %>%
   corpus() %>%
@@ -658,7 +616,7 @@ dic <- readRDS("corpus/dataset.Rds") %>%
   dfm()
 
 # LM
-LM <- dic %>% dfm_lookup(dictionary = data_dictionary_LoughranMcDonald)
+LM <- dic %>% dfm_lookup(dictionary = quanteda.sentiment::data_dictionary_LoughranMcDonald)
 LM <- LM %>%
   convert(to = "data.frame") %>%
   transmute(LM_SENTIMENT = (POSITIVE - NEGATIVE) / (NEGATIVE + POSITIVE), DATE = docvars(LM)$date) %>%
@@ -702,7 +660,7 @@ HD_BN <- HD_BN %>%
   ts(start = c(1999, 1), frequency = 4)
 
 # Forward Guidance Shocks (Swanson, 2021, JME)
-FG <- read_xlsx("Swanson (2021)/Swanson 2021.xlsx", skip = 2, col_types = c("date", "numeric", "numeric", "numeric", "numeric"), col_names = c("DATE", "FFR", "FG", "LSAP", "-LSAP"))
+FG <- read_xlsx("data/foreign_data/swanson_2021.xlsx", skip = 2, col_types = c("date", "numeric", "numeric", "numeric", "numeric"), col_names = c("DATE", "FFR", "FG", "LSAP", "-LSAP"))
 FG <- FG %>%
   group_by(quarter = floor_date(DATE, "quarter")) %>%
   summarise(FG = mean(FG))
@@ -788,13 +746,13 @@ df <- cbind(IT_ROLLING.WINDOW = rolling.window, IT_SPEAKER.FE = speaker, SSR, un
 df <- window(df, start = c(1999, 1), end = c(2020, 1))
 df %>%
   data.frame() %>%
-  stargazer(type = "text", digits = 2, summary.stat = c("n", "mean", "sd", "p25", "median", "p75"))
+  stargazer::stargazer(type = "text", digits = 2, summary.stat = c("n", "mean", "sd", "p25", "median", "p75"))
 
 
 
 
 ######## Table A15: Robustness Tests
-stargazer(ols_robustness,
+stargazer::stargazer(ols_robustness,
   type = "text", omit.stat = c("ser", "f"), digits = 2, no.space = F,
   omit = c("year"), column.labels = c("Shadow Rate", "Speaker FE", "FG + Dictionaries", "Rolling Window")
 )

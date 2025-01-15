@@ -26,6 +26,7 @@ lda_word_embedding_collection <- c()
 
 # loop through LDA
 for (k in k) {
+  print(k)
   # LDA hyperparameter
   burnin <- 1000 # set burn in
   iter <- 2000 # set iterations
@@ -62,5 +63,5 @@ for (k in k) {
 
 # Export LDA model -------------------------------------------------------------
 
-saveRDS(lda_doc_embedding_collection, file = paste0(embeddings_path, "fulllda_doc.rds"))
-saveRDS(lda_word_embedding_collection, file = paste0(embeddings_path, "fulllda_word.rds"))
+saveRDS(lda_doc_embedding_collection, file = paste0(embeddings_path, "lda_doc_embedding.rds"))
+saveRDS(lda_word_embedding_collection, file = paste0(embeddings_path, "lda_word_embedding.rds"))
