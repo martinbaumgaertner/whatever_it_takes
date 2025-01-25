@@ -24,8 +24,8 @@
 #   splitting is handled by the line 77.
 #
 #   2. Pre-computed Context Word Files: The resulting CSV files containing the
-#   extracted context words are included with these replication files. We would
-#   recommend relying on these replication files.
+#   extracted context words are quite large and therefore NOT included in this replication set.
+#   If you are interested feel free to contact us!
 #
 # Consequently, the code for extracting context terms from the raw text (Part 1) is
 # currently commented out. Running the code in its current form will directly read
@@ -34,7 +34,6 @@
 
 # Preparation ------------------------------------------------------------------
 
-# TODO: Check with Johannes why out
 # Part 1: Data (Commented Out - Context Words Pre-computed) --------------------
 
 
@@ -42,108 +41,117 @@
 # are now commented out for replication purposes. They are included here for
 # transparency and to demonstrate the original processing steps.
 
+library(tidyverse)
+library(quanteda)
+library(tidytext)
+library(SnowballC)
 # ########## Central bank text --------
 
 # # Load speech data:
-# data = readRDS("corpus/dataset.Rds")
 # # Filter for specific central banks (e.g., Bank of Canada):
-# data = data %>% filter(cb %in% c("Bank of Canada"))
-# # Select relevant columns and extract the year from the date
-# data = data %>% select(cb, date, text) %>% mutate(date = year(date))
-# # Split Fed data if necessary (example: first 1500 speeches)
-# # data = data[1:1500,]
+data <- readRDS("data/processed/text_data.Rds") %>%
+  filter(cb %in% c("Bank of Canada")) %>%
+  select(cb, date, text) %>%
+  mutate(date = year(date))
+
+# # Split Data data if necessary (example: first 1500 speeches)
+data <- data[1:1500, ]
 
 # # Create quanteda corpus
-# corpus = corpus(data)
-# corpus_df = cbind(docid = corpus %>% docnames(), corpus %>% docvars())
+corpus <- corpus(data)
+corpus_df <- cbind(docid = corpus %>% docnames(), corpus %>% docvars())
 
 # # Create tokens object, remove stopwords and numbers
-# tokens = corpus %>% tokens()
-# tokens = tokens_remove(tokens, stopwords("en"))
-# tokens = tokens_select(tokens, pattern = "\\b(?!\\d+\\b)\\w+\\b", valuetype = "regex")
+tokens <- corpus %>%
+  tokens() %>%
+  tokens_remove(stopwords("en")) %>%
+  tokens_select(pattern = "\\b(?!\\d+\\b)\\w+\\b", valuetype = "regex")
 
 # # Extract context words using kwic
-# econ_terms = list(econ = c("inflat*", "price", "wage", "cyclical", "growth", "employ*", "unemplo*", "recover*", "cost")) %>% dictionary()
-# kwic = kwic(tokens, pattern = econ_terms$econ, window = 6)
-# kwic = data.frame(docid = kwic$docname, KEYWORD = kwic$keyword, TEXT = cbind(kwic$pre, kwic$post))
-# kwic = kwic %>% mutate(TEXT = paste0(TEXT.1, " ", TEXT.2)) %>% select(-c(TEXT.1, TEXT.2))
-# kwic = kwic %>% left_join(corpus_df)
-# kwic = kwic %>% unnest_tokens("TOKENS", TEXT, token = "words")
-# kwic$TOKENS = kwic$TOKENS %>% wordStem(language = "en")
+econ_terms <- list(econ = c("inflat*", "price", "wage", "cyclical", "growth", "employ*", "unemplo*", "recover*", "cost")) %>% dictionary()
+kwic <- kwic(tokens, pattern = econ_terms$econ, window = 6)
+kwic <- data.frame(docid = kwic$docname, KEYWORD = kwic$keyword, TEXT = cbind(kwic$pre, kwic$post)) %>%
+  mutate(TEXT = paste0(TEXT.1, " ", TEXT.2)) %>%
+  select(-c(TEXT.1, TEXT.2)) %>%
+  left_join(corpus_df) %>%
+  unnest_tokens("TOKENS", TEXT, token = "words")
+kwic$TOKENS <- kwic$TOKENS %>% wordStem(language = "en")
 # kwic
 
 
 # # Write context words to CSV
-# write.csv(kwic, "Textual stability/kwick_boc.csv")
+write.csv(kwic, "ddata/processed/stability/kwick_boc.csv")
 
 # ########## Random Wikipedia text corpus ----------
 
 # # Load Random Wikipedia Articles using the getwiki package:
-# wiki = c()
-# for (i in 1:1000) {
-#   set.seed(124)
-#   txt = random_wiki(clean = TRUE)
-#   wiki = c(wiki, txt)
-# }
+wiki <- c()
+for (i in 1:1000) {
+  set.seed(124)
+  txt <- getwiki::random_wiki(clean = TRUE)
+  wiki <- c(wiki, txt)
+}
 
 # # Create quanteda corpus
-# wiki_corpus = wiki %>% corpus()
-# wiki_corpus_df = cbind(docid = wiki_corpus %>% docnames(), wiki_corpus %>% docvars())
+wiki_corpus <- wiki %>% corpus()
+wiki_corpus_df <- cbind(docid = wiki_corpus %>% docnames(), wiki_corpus %>% docvars())
 
 # # Create tokens object, remove stopwords and numbers
-# wiki_tokens = wiki_corpus %>% tokens(remove_numbers = T, remove_separators = T, remove_punct = T)
-# wiki_tokens = wiki_tokens %>% tokens_tolower()
-# wiki_tokens = tokens_remove(wiki_tokens, stopwords("en"))   # remove stopwords
-# wiki_tokens = tokens_select(wiki_tokens, pattern = "\\b(?!\\d+\\b)\\w+\\b", valuetype = "regex")  # remove numbers
+wiki_tokens <- wiki_corpus %>%
+  tokens(remove_numbers = TRUE, remove_separators = TRUE, remove_punct = TRUE) %>%
+  tokens_tolower() %>%
+  tokens_remove(stopwords("en")) %>%
+  tokens_select(wiki_tokens, pattern = "\\b(?!\\d+\\b)\\w+\\b", valuetype = "regex") # remove numbers
 
 # # Extract context words using kwic
-# econ_terms = list(econ = c("inflat*", "price", "wage", "cyclical", "growth", "employ*", "unemplo*", "recover*", "cost")) %>% dictionary()
-# wiki_kwic = kwic(wiki_tokens, pattern = econ_terms$econ, window = 6)
-# wiki_kwic = data.frame(docid = wiki_kwic$docname, KEYWORD = wiki_kwic$keyword, TEXT = cbind(wiki_kwic$pre, wiki_kwic$post))
-# wiki_kwic = wiki_kwic %>% mutate(TEXT = paste0(TEXT.1, " ", TEXT.2)) %>% select(-c(TEXT.1, TEXT.2))
-# wiki_kwic = wiki_kwic %>% left_join(wiki_corpus_df)
-# wiki_kwic = wiki_kwic %>% unnest_tokens("TOKENS", TEXT, token = "words")
-# wiki_kwic$TOKENS = wiki_kwic$TOKENS %>% wordStem(language = "en")
-# wiki_kwic$docid = "WIKIPEDIA"
+econ_terms <- list(econ = c("inflat*", "price", "wage", "cyclical", "growth", "employ*", "unemplo*", "recover*", "cost")) %>% dictionary()
+wiki_kwic <- kwic(wiki_tokens, pattern = econ_terms$econ, window = 6)
+wiki_kwic <- data.frame(docid = wiki_kwic$docname, KEYWORD = wiki_kwic$keyword, TEXT = cbind(wiki_kwic$pre, wiki_kwic$post)) %>%
+  mutate(TEXT = paste0(TEXT.1, " ", TEXT.2)) %>%
+  select(-c(TEXT.1, TEXT.2)) %>%
+  left_join(wiki_corpus_df) %>%
+  unnest_tokens("TOKENS", TEXT, token = "words")
+wiki_kwic$TOKENS <- wiki_kwic$TOKENS %>% wordStem(language = "en")
+wiki_kwic$docid <- "WIKIPEDIA"
 
 # # Write context words to CSV
-# write.csv(wiki_kwic, "Textual stability/kwick_wiki_random.csv")
-#
+write.csv(wiki_kwic, "data/processed/stability/kwick_wiki_random.csv")
 
 # ########## Economics Wikipedia text corpus ----------
 
 # # Load Economics Wikipedia Articles using the getwiki package and the Economics target terms:
-# wiki = c()
-# for (i in 1:length(econ_terms$econ)) {
-#   print(econ_terms$econ[i])
-#   txt = search_wiki(econ_terms$econ[i], clean = T)
-#   txt = txt$content
-#   wiki = c(wiki, txt)
-# }
+wiki <- c()
+for (i in 1:length(econ_terms$econ)) {
+  print(econ_terms$econ[i])
+  txt <- getwiki::search_wiki(econ_terms$econ[i], clean = TRUE)
+  txt <- txt$content
+  wiki <- c(wiki, txt)
+}
 
 # # Create quanteda corpus
-# wiki_corpus = wiki %>% corpus()
-# wiki_corpus_df = cbind(docid = wiki_corpus %>% docnames(), wiki_corpus %>% docvars())
+wiki_corpus <- wiki %>% corpus()
+wiki_corpus_df <- cbind(docid = wiki_corpus %>% docnames(), wiki_corpus %>% docvars())
 
 # # Create tokens object, remove stopwords and numbers
-# wiki_tokens = wiki_corpus %>% tokens(remove_numbers = T, remove_separators = T, remove_punct = T)
-# wiki_tokens = wiki_tokens %>% tokens_tolower()
-# wiki_tokens = tokens_remove(wiki_tokens, stopwords("en"))   # remove stopwords
-# wiki_tokens = tokens_select(wiki_tokens, pattern = "\\b(?!\\d+\\b)\\w+\\b", valuetype = "regex")  # remove numbers
+wiki_tokens <- wiki_corpus %>%
+  tokens(remove_numbers = TRUE, remove_separators = TRUE, remove_punct = TRUE) %>%
+  tokens_tolower() %>%
+  tokens_select(pattern = "\\b(?!\\d+\\b)\\w+\\b", valuetype = "regex") # remove numbers
 
 # # Extract context words using kwic
-# econ_terms = list(econ = c("inflat*", "price", "wage", "cyclical", "growth", "employ*", "unemplo*", "recover*", "cost")) %>% dictionary()
-# wiki_kwic = kwic(wiki_tokens, pattern = econ_terms$econ, window = 6)
-# wiki_kwic = data.frame(docid = wiki_kwic$docname, KEYWORD = wiki_kwic$keyword, TEXT = cbind(wiki_kwic$pre, wiki_kwic$post))
-# wiki_kwic = wiki_kwic %>% mutate(TEXT = paste0(TEXT.1, " ", TEXT.2)) %>% select(-c(TEXT.1, TEXT.2))
-# wiki_kwic = wiki_kwic %>% left_join(wiki_corpus_df)
-# wiki_kwic = wiki_kwic %>% unnest_tokens("TOKENS", TEXT, token = "words")
-# wiki_kwic$TOKENS = wiki_kwic$TOKENS %>% wordStem(language = "en")
-# wiki_kwic$docid = "WIKIPEDIA"
-# wiki_kwic
+econ_terms <- list(econ = c("inflat*", "price", "wage", "cyclical", "growth", "employ*", "unemplo*", "recover*", "cost")) %>% dictionary()
+wiki_kwic <- kwic(wiki_tokens, pattern = econ_terms$econ, window = 6)
+wiki_kwic <- data.frame(docid = wiki_kwic$docname, KEYWORD = wiki_kwic$keyword, TEXT = cbind(wiki_kwic$pre, wiki_kwic$post)) %>%
+  mutate(TEXT = paste0(TEXT.1, " ", TEXT.2)) %>%
+  select(-c(TEXT.1, TEXT.2)) %>%
+  left_join(wiki_corpus_df) %>%
+  unnest_tokens("TOKENS", TEXT, token = "words")
+wiki_kwic$TOKENS <- wiki_kwic$TOKENS %>% wordStem(language = "en")
+wiki_kwic$docid <- "WIKIPEDIA"
+wiki_kwic
 
 # # Write context words to CSV
-# write.csv(wiki_kwic, "Textual stability/kwick_wiki_econ.csv")
+write.csv(wiki_kwic, "data/processed/stability/kwick_wiki_econ.csv")
 
 
 
@@ -162,22 +170,22 @@
 ####### Read pre-computed context word data for central banks.
 # These CSV files contain the context words extracted in Part 1 (now commented out for replication).
 kwick_cb <- rbind(
-  read_csv("Textual stability/kwick_boc.csv"),
-  read_csv("Textual stability/kwick_boe.csv"),
-  read_csv("Textual stability/kwick_boi.csv"),
-  read_csv("Textual stability/kwick_boj.csv"),
-  read_csv("Textual stability/kwick_db.csv"),
-  read_csv("Textual stability/kwick_ecb.csv"),
-  read_csv("Textual stability/kwick_fed1.csv"),
-  read_csv("Textual stability/kwick_fed2.csv"),
-  read_csv("Textual stability/kwick_fed3.csv"),
-  read_csv("Textual stability/kwick_riks.csv")
+  read_csv("data/processed/stability/kwick_boc.csv"),
+  # read_csv("data/processed/stability/kwick_boe.csv"),
+  # read_csv("data/processed/stability/kwick_boi.csv"),
+  # read_csv("data/processed/stability/kwick_boj.csv"),
+  # read_csv("data/processed/stability/kwick_db.csv"),
+  # read_csv("data/processed/stability/kwick_ecb.csv"),
+  # read_csv("data/processed/stability/kwick_fed1.csv"),
+  # read_csv("data/processed/stability/kwick_fed2.csv"),
+  # read_csv("data/processed/stability/kwick_fed3.csv"),
+  # read_csv("data/processed/stability/kwick_riks.csv")
 )
 
 ##### Read pre-computed context word data for Wikipedia Articles
 # These CSV files contain the context words extracted in Part 1 (now commented out for replication).
-kwick_wiki_econ <- read_csv("textual stability/kwick_wiki_econ.csv")
-kwick_wiki_random <- read_csv("textual stability/kwick_wiki_random.csv")
+kwick_wiki_econ <- read_csv("data/processed/stability/kwick_wiki_econ.csv")
+kwick_wiki_random <- read_csv("data/processed/stability/kwick_wiki_random.csv")
 
 
 
@@ -390,6 +398,7 @@ ols4[["8"]] <- kwick_riks %>%
 ols4[["9"]] <- kwick_rbi %>%
   filter(`US Federal Reserve` > 0 & `Reserve Bank of India` > 0) %>%
   lm(formula = `US Federal Reserve` ~ `Reserve Bank of India` + factor(KEYWORD))
+
 stargazer::stargazer(ols4,
   type = "text", omit = c("KEYWORD"), digits = 2, omit.stat = c("f", "ser", "adj.rsq"),
   add.lines = list(c("Keyword controll", rep("Yes", 9)), c("Full Vocabluary", rep("No", 9)))
