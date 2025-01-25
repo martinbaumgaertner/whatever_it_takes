@@ -46,7 +46,6 @@ map <- world_raw %>%
 
 # Descriptive Statistics -------------------------------------------------------
 
-
 ###### Corpus Summary Statistics
 # TODO: Check with Johannes for differences
 dataset %>% nrow() # 21,916 speeches

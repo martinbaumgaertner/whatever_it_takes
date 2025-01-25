@@ -16,7 +16,7 @@ clean_text <- raw_text %>%
 
 filter_text <- clean_text %>%
   dplyr::filter(language == "en") %>%
-  dplyr::filter(nwords < 20000 & nchar(text) > 0) %>%
+  dplyr::filter(nchar(text) > 0) %>%
   # use collocations
   select(-text) %>%
   rename(text = text_colloc)
