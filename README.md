@@ -2,8 +2,7 @@
 **_"Whatever it takes to understand a central banker"_**
 
 ## Authors
-Martin Baumgärtner and Johannes Zahner  
-*Date: Today*
+Martin Baumgärtner and Johannes Zahner
 
 ---
 
