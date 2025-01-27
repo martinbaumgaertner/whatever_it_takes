@@ -38,7 +38,7 @@ find_collocations <- function(data,
       saveRDS(full, file = colloc_file)
     }
   } else {
-    full <- dplyr::read_rds(colloc_file)
+    full <- readr::read_rds(colloc_file)
   }
 
   return(full)
@@ -62,7 +62,7 @@ replace_collocations <- function(
       speaker = stringr::str_remove_all(speaker, ","),
       speaker = stringr::str_split(speaker, " and ")
     ) %>%
-    dplyr::unnest(speaker) %>%
+    tidyr::unnest(speaker) %>%
     dplyr::distinct(speaker) %>%
     dplyr::filter(!is.na(speaker)) %>%
     dplyr::mutate(
