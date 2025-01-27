@@ -66,43 +66,6 @@ To replicate all figures and tables, a FRED API key is required. This allows the
 
 ---
 
-## Replication of Tables
-The following codes replicate the tables:
-
-#TODO: Update Tabele numbers and script names
-- **Table 1** (Corpus Summary): `Ch 3.1.R`  
-- **Table 2** (Rhetoric Stability): `Ch 3.3.R`  
-- **Table 3** (Extrinsic Evaluation 1: Word Prediction): `??`  
-- **Table 4** (Extrinsic Evaluation 2: Interest Rate Predictions):  
-  - Federal Reserve: `Ch 4.1 - US.R`  
-  - ECB: `Ch 4.1 - EA.R`  
-- **Table 5** (Regression Results: Monetary Policy Regime classification): `Ch 5.1.R`  
-- **Table 6** (Regression Results: Expectations): `Ch 5.2-5.5.R`  
-- **Table 7** (IT Taylor Rule Regression Table): `Ch 5.2-5.5.R`  
-- **Table A4** (Robustness: Rhetoric Stability): `Ch 3.3.R`  
-- **Table A5** (Intrinsic Evaluation 1: Similarity of key monetary policy terms): `Ch 4.2.R`  
-- **Table A6** (Intrinsic Evaluation: Similarity to Basel across language models): `Ch 4.2.R`  
-- **Table A7** (Additional Intrinsic Evaluation: Homonym across language models): `Ch 4.2.R`  
-- **Table A8** (Summary Statistics Evaluation):  
-  - Federal Reserve: `Ch 4.1 - US.R`  
-  - ECB: `Ch 4.1 - EA.R`  
-- **Table A9** (Regression Results: LDA topics): `Ch 5.2-5.5.R`  
-- **Table A10** (MP Frameworks – Summary Statistics): This table collects all summary statistics from Chapter 5, hence the statistics can be found in `Ch 5.1.R` and `Ch 5.2-5.5.R`.
-
----
-
-## Replication of Figures
-The provided code automatically sets the current working directory to the location of the current script, loads general settings from `00_setup.R`, and cleans the workspace. To disable this behavior, uncomment the first three commands in the script. The following codes replicate the figures:
-
-#TODO: Update Tabele numbers and script names
-- **Figure 3** (Properties of the Text Corpus): `Ch 3.1.R`  
-- **Figure 5** (Central Banks’ Similarity): `Ch 4.2.R`  
-- **Figure 6** (FED’s Stance on Inflation Targeting): `Ch 5.2-5.5.R`  
-- **Figure 7** (FIT/LIT Specific Wordcloud): `Ch 5.2-5.5.R`  
-- **Figure 8** (Interaction Effect of Inflation Response and IT): `Ch 5.2-5.5.R`  
-
----
-
 ## Contact
 For questions, please contact **Johannes Zahner** at johannes.zahner@googlemail.com.
 

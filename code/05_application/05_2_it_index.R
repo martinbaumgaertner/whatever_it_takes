@@ -456,8 +456,6 @@ df <- cbind(InfTar, EXPINF1YR, EXPINF2YR, EXPINF10YR, MICH, REAINTRATREARAT1MO, 
 df <- window(df, start = c(1999, 1), end = c(2020, 1))
 df <- df %>% na.omit()
 
-
-
 ####### Table A11: Summary Statistics
 df %>%
   data.frame() %>%
@@ -465,7 +463,7 @@ df %>%
   stargazer::stargazer(type = "text")
 
 
-###### Table 6: Regression
+###### Table 9: Regression
 ols <- list()
 ols[["1"]] <- lm(abs(EXPINF1YR) ~ D.CPIAUCSL + lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG, df)
 ols[["2"]] <- lm(abs(EXPINF2YR) ~ D.CPIAUCSL + lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG, df)
@@ -475,7 +473,7 @@ ols[["5"]] <- lm(REAINTRATREARAT1MO ~ EXPINF1YR * lag(InfTar) + Infl.Risk.Premiu
 ols[["6"]] <- lm(REAINTRATREARAT1YE ~ EXPINF1YR * lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG + D.CPIAUCSL, df)
 ols[["7"]] <- lm(REAINTRATREARAT10Y ~ EXPINF1YR * lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG + D.CPIAUCSL, df)
 ols[["8"]] <- lm(abs(Infl.Risk.Premium) ~ D.CPIAUCSL + lag(InfTar) + Real.Risk.Premium + UNC + LM + HD_BN + FG, df)
-stargazer::stargazer(ols, type = "text", omit.stat = c("ser", "f"), digits = 2, no.space = F, column.sep.width = "0pt", font.size = "small", keep = c("EXPINF1YR", "InfTar"))
+stargazer::stargazer(ols, type = "text", omit.stat = c("ser", "f"), digits = 2, no.space = FALSE, column.sep.width = "0pt", font.size = "small", keep = c("EXPINF1YR", "InfTar"))
 
 
 
@@ -529,14 +527,13 @@ SHADOW_RATE <- SHADOW_RATE %>% na.omit()
 df <- cbind(IT = IT_ts, SHADOW_RATE, CPI, UNRATE, GDP_GAP)
 df <- window(df, start = c(1999, 1), end = c(2020, 1))
 
-
 ###### Table A11: Statistical Summary
 df %>%
   data.frame() %>%
   stargazer::stargazer(type = "text", digits = 2, summary.stat = c("n", "mean", "sd", "p25", "median", "p75"))
 
 
-###### Table 7: IT Taylor Rule Regression Table
+###### Table 10: IT Taylor Rule Regression Table
 ols <- list()
 ols[["1"]] <- lm(SHADOW_RATE ~ CPI, df)
 ols[["2"]] <- lm(SHADOW_RATE ~ CPI * lag(IT), df)
@@ -734,11 +731,6 @@ rolling.window <- (rolling.window - mean(rolling.window)) / sd(rolling.window)
 df <- cbind(IT = rolling.window, SHADOW_RATE, CPI, UNRATE, GDP_GAP)
 df <- window(df, start = c(1999, 1), end = c(2020, 1))
 ols_robustness[["Rolling Window"]] <- lm(SHADOW_RATE ~ CPI * lag(IT) + UNRATE * lag(IT) + GDP_GAP * lag(IT), df)
-
-
-
-
-
 
 
 ######## Table A11: Statistical Summary

@@ -2,7 +2,7 @@
 
 # Title: Intrinsic Evaluation
 #
-# This R code replicates the intrinsic evaluations from Chapter 4.2 of the paper
+# This R code replicates the intrinsic evaluations from Chapter 4.3 of the paper
 # "Whatever it takes to understand a central banker – Embedding their words using
 # neural networks." To reproduce the results without modification, the following
 # prerequisites are required:
@@ -22,9 +22,6 @@
 library(tidyverse)
 library(doc2vec)
 library(textdata)
-
-
-
 
 
 # Data -------------------------------------------------------------------------
@@ -112,22 +109,19 @@ top_embeddings <- function(models, word, n_output) {
 
 
 
-#### Table A5:
+#### Table 6:
 top_embeddings(list("doc2vec" = doc2vec), "inflation", 10)
 top_embeddings(list("doc2vec" = doc2vec), "unemployment", 10)
 top_embeddings(list("doc2vec" = doc2vec), "output", 10)
 
 
 
-##### Table A6:
+##### Table 7:
 top_embeddings(list("doc2vec" = doc2vec, "glove" = glove, "google" = google), "basel", 10)
 
 
-
-##### Table A7:
+# Not in the published paper
 top_embeddings(list("doc2vec" = doc2vec, "glove" = glove, "google" = google), "greening", 10)
-
-
 
 
 
@@ -144,7 +138,7 @@ similarity <- dataset %>%
 #### Calculate average central bank (CB) embedding for each country.
 similarity <- similarity %>%
   group_by(ISO3, dimension) %>%
-  summarise(value = mean(value, na.rm = T)) %>%
+  summarise(value = mean(value, na.rm = TRUE)) %>%
   ungroup()
 
 

@@ -251,7 +251,7 @@ ea <- similarity %>%
   data.frame()
 
 
-#### Table A11
+#### Summary Statistics Table
 stargazer::stargazer(summary_statistic, nz, us, ea, type = "text", digits = 2, summary.stat = c("n", "mean", "sd", "p25", "median", "p75"), title = "Summary Statistics Main Reg. 1")
 
 
@@ -296,19 +296,17 @@ reg_results[["C4"]] <- similarity %>%
   lm(formula = similarity ~ cobham_framework_IT.regime + factor(year) + CPI.diff.EA + UNRATE.diff.EA + GDP.diff.EA)
 
 
-##### Table 5: Regression results: Monetary Policy Regime classification
+##### Table 8: Regression results: Monetary Policy Regime classification
 stargazer::stargazer(reg_results,
-  type = "text", no.space = T, omit.stat = c("f", "ser"), digits = 2, column.labels = c("RBNZ", "Fed", "ECB"), column.separate = c(3, 3, 3),
+  type = "text", no.space = TRUE, omit.stat = c("f", "ser"), digits = 2, column.labels = c("RBNZ", "Fed", "ECB"), column.separate = c(3, 3, 3),
   keep = c("cobham_targetITs", "cobham_framework_IT.regimeFIT", "cobham_framework_IT.regimeLIT", "cobham_framework_IT.regimeFCIT", "cobham_framework_IT.regimeLCIT", "Constant"),
-  dep.var.caption = "Similarity", dep.var.labels.include = F, add.lines = list(c("Macro-controls", rep(c("No", "Yes", "Yes"), 4)), c("Year Fixed Effects", rep("Yes", 12)))
+  dep.var.caption = "Similarity", dep.var.labels.include = FALSE, add.lines = list(c("Macro-controls", rep(c("No", "Yes", "Yes"), 4)), c("Year Fixed Effects", rep("Yes", 12)))
 )
-
-
 
 
 ##### Table A12: Regression results: Monetary Policy Framework classification
 stargazer::stargazer(reg_results,
-  type = "text", no.space = T, omit.stat = c("f", "ser"), digits = 2, column.labels = c("RBNZ", "Fed", "ECB"), column.separate = c(3, 3, 3),
-  keep = c("cobham_target", "cobham_framework", "cobham_framework_IT.regime", "Constant"), dep.var.caption = "Similarity", dep.var.labels.include = F,
+  type = "text", no.space = TRUE, omit.stat = c("f", "ser"), digits = 2, column.labels = c("RBNZ", "Fed", "ECB"), column.separate = c(3, 3, 3),
+  keep = c("cobham_target", "cobham_framework", "cobham_framework_IT.regime", "Constant"), dep.var.caption = "Similarity", dep.var.labels.include = FALSE,
   add.lines = list(c("Macro-controls", rep(c("No", "Yes", "Yes"), 4)), c("Year Fixed Effects", rep("Yes", 12)))
 )

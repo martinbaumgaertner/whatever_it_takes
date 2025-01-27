@@ -272,9 +272,7 @@ kwick_wiki_econ <- kwick_wiki_econ %>%
 
 
 
-
-
-## Table 2 ----------------------------------------------------------------------
+## Table 3 ----------------------------------------------------------------------
 
 # This code performs OLS regressions to compare the textual similarity between the US Federal
 # Reserve (Fed) and other central banks, as well as Wikipedia texts. The dependent variable in
@@ -302,7 +300,7 @@ stargazer(ols,
 
 
 
-## Table A4 (Table 2 without controls) ------------------------------------------
+## Table A4 (Table 3 without controls) ------------------------------------------
 
 # This code performs OLS regressions to compare the textual similarity between the US Federal
 # Reserve (Fed) and other central banks, as well as Wikipedia texts. The dependent variable in
