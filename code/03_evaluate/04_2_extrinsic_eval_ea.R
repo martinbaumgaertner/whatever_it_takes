@@ -2,7 +2,7 @@
 
 # Title: Extrinsic Evaluation 2 - EA
 #
-# This R code replicates Table 2 from Chapter 4.1 of the paper "Whatever it takes to
+# This R code replicates Table 5 from Chapter 4.2 of the paper "Whatever it takes to
 # understand a central banker – Embedding their words using neural networks." To
 # reproduce the results without modification, the following prerequisites are required:
 #
@@ -389,16 +389,10 @@ mse <- mean((test$prediction - test$d.int)^2)
 performance <- performance %>% add_row(model = "All Dic", mse = mse)
 
 
-
-
-
-
-
 # Word Embeddings --------------------------------------------------------------
 
 
 ##### GloVe ---------
-# TODO: Add Word column
 glove <- readRDS("data/embeddings/fullglove10w300.Rds") %>% rename(token = word)
 train <- function_document_matrix(dfm_train, glove, macro_df) %>%
   select(d.int, starts_with("V")) %>%
@@ -629,7 +623,6 @@ mse <- mean((test$prediction - test$d.int)^2)
 performance_docs <- performance_docs %>% add_row(model = "doc2vec_pvdm", mse = mse)
 
 
-
 ##### Doc2Vec PVDM Pre ---------------
 doc2vec_pvdm_pre <- doc2vec::read.paragraph2vec(file = "data/embeddings/fulldoc2vecPVDMpre300.bin")
 doc2vec_pvdm_pre <- as.matrix(doc2vec_pvdm_pre, which = "docs") %>% as_tibble(rownames = "doc_id")
@@ -645,15 +638,6 @@ elastic_net <- function_elastic_net(train)
 test$prediction <- predict(elastic_net, test)
 mse <- mean((test$prediction - test$d.int)^2)
 performance_docs <- performance_docs %>% add_row(model = "doc2vec_pvdm_pre", mse = mse)
-
-
-
-
-
-
-
-
-
 
 
 # Table 4 ----------------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 # Title: Extrinsic Evaluation: US
 #
-# This R code replicates Table 2 from Chapter 4.1 of the paper "Whatever it takes to
+# This R code replicates Table 5 from Chapter 4.2 of the paper "Whatever it takes to
 # understand a central banker – Embedding their words using neural networks." To
 # reproduce the results without modification, the following prerequisites are required:
 #
@@ -24,8 +24,6 @@
 
 
 # Attention: Running the code takes around 20 minutes on a modern computer.
-
-
 
 
 # Preparation ------------------------------------------------------------------
@@ -69,8 +67,6 @@ rm(dfm)
 
 
 
-
-
 ## Macro Data ---------
 
 ##### Load Macroeconomic Indicators from FRED Database:
@@ -109,11 +105,6 @@ stargazer::stargazer(data.frame(macro_df),
 #### Monetary policy shocks
 ols <- lm(SHADOW_RATE ~ UNRATE + CPI + PRODUCTION, macro_df)
 macro_df$d.int <- ols$residuals
-
-
-
-
-
 
 
 # Functions --------------------------------------------------------------------
@@ -227,8 +218,6 @@ performance_docs <- performance_docs %>% add_row(model = "No Model", mse = mean(
 
 
 
-
-
 # Dictionary approaches --------------------------------------------------------
 
 
@@ -268,8 +257,6 @@ elastic_net <- function_elastic_net(train)
 test$prediction <- predict(elastic_net, test)
 mse <- mean((test$prediction - test$d.int)^2)
 performance <- performance %>% add_row(model = "LM", mse = mse)
-
-
 
 
 
@@ -318,10 +305,6 @@ performance <- performance %>% add_row(model = "HD", mse = mse)
 
 
 
-
-
-
-
 #### Hu, Lui (2004) Sentiment --------------
 
 #### Train set
@@ -361,9 +344,6 @@ mse <- mean((test$prediction - test$d.int)^2)
 performance <- performance %>% add_row(model = "HuLiu", mse = mse)
 
 
-
-
-
 #### NRC Word-Emotion Lexicon by Mohammad and Turney (2013) --------------
 
 #### Train set
@@ -395,8 +375,6 @@ elastic_net <- function_elastic_net(train)
 test$prediction <- predict(elastic_net, test)
 mse <- mean((test$prediction - test$d.int)^2)
 performance <- performance %>% add_row(model = "NRC", mse = mse)
-
-
 
 
 #### All Dictionaries combined --------------
@@ -434,10 +412,6 @@ elastic_net <- function_elastic_net(train)
 test$prediction <- predict(elastic_net, test)
 mse <- mean((test$prediction - test$d.int)^2)
 performance <- performance %>% add_row(model = "All Dic", mse = mse)
-
-
-
-
 
 
 
@@ -525,7 +499,6 @@ performance <- performance %>% add_row(model = "doc2vec_pvdm", mse = mse)
 
 
 
-
 ##### Doc2vec BOW ----------------------
 doc2vec_bow <- doc2vec::read.paragraph2vec(file = "data/embeddings/fulldoc2vecPVDBOW300.bin")
 doc2vec_bow <- as.matrix(doc2vec_bow, which = "words") %>% as_tibble(rownames = "token")
@@ -539,7 +512,6 @@ elastic_net <- function_elastic_net(train)
 test$prediction <- predict(elastic_net, test)
 mse <- mean((test$prediction - test$d.int)^2)
 performance <- performance %>% add_row(model = "doc2vec_bow", mse = mse)
-
 
 
 
@@ -608,16 +580,6 @@ elastic_net <- function_elastic_net(train)
 test$prediction <- predict(elastic_net, test)
 mse <- mean((test$prediction - test$d.int)^2)
 performance <- performance %>% add_row(model = "word2vec_google", mse = mse)
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -717,15 +679,7 @@ performance_docs <- performance_docs %>% add_row(model = "doc2vec_pvdm_pre", mse
 
 
 
-
-
-
-
-
-
-
-
-# Table 4 ----------------------------------------------------------------------
+# Table 5 ----------------------------------------------------------------------
 
 performance %>%
   mutate(mse = mse / performance$mse[performance$model == "No Model"]) %>%

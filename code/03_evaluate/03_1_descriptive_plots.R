@@ -47,8 +47,7 @@ map <- world_raw %>%
 # Descriptive Statistics -------------------------------------------------------
 
 ###### Corpus Summary Statistics
-# TODO: Check with Johannes for differences
-dataset %>% nrow() # 21,916 speeches
+dataset %>% nrow() # 21.134 speeches
 dataset %>%
   count(cb) %>%
   nrow() # 128 central banks
@@ -87,7 +86,7 @@ pop %>%
 
 
 
-# Table 1: Corpus Summary ------------------------------------------------------
+# Table 2: Corpus Summary ------------------------------------------------------
 
 ###### Top 10:
 dataset %>%
@@ -112,10 +111,10 @@ map %>% distinct(n)
 map %>%
   filter(lat > -66) %>%
   ggplot() +
-  geom_polygon(aes(x = long, y = lat, group = group, fill = n)) + # fill <- similarity
+  geom_polygon(aes(x = long, y = lat, group = group, fill = n)) +
   coord_fixed(1.3) +
   labs(fill = "Covered in the corpus?") +
-  scale_fill_manual(values = c("#00BA38", "#F8766D")) +
+  scale_fill_grey(start = 0.2) +
   theme_classic(base_family = "serif") +
   theme(
     axis.text = element_blank(),
@@ -126,30 +125,33 @@ map %>%
     axis.title = element_blank(),
     panel.background = element_rect(fill <- "white")
   )
+ggsave("Worldmap_corpus.pdf", width = 10, height = 5)
 
 
 ####### Plot 2: Type of documents / Number of speeches
-dataset %>%
-  count(type = type == "speech") %>%
+nword_plot <- dataset %>% count(type = "speech") %>%
   mutate(type = if_else(type == FALSE, "Other", "Speech")) %>%
-  ggplot(aes(n, type, fill = type)) +
-  scale_fill_manual(values = c("#C49A00", "#00B6EB")) +
-  geom_col(show.legend = FALSE) +
+  ggplot(aes(n, type)) +
+  geom_col(show.legend = FALSE, fill = "grey20") +
+  theme(base_family = "serif") +
   labs(y = "Type of document", x = "Number of Documents")
 
 
 ####### Plot 3: Number of words per document
-dataset %>%
+n_speech_plot <- dataset %>%
   filter(nwords < 70000) %>%
   ggplot(aes(nwords)) +
-  geom_histogram(binwidth = 500, fill = "#00B6EB") +
+  geom_histogram(binwidth = 500, fill = "grey20") +
   labs(y = "Number of Documents", x = "Number of Words")
 
 
 ####### Plot 4: Temporal Variation
-dataset %>%
-  count(year = year(date)) %>%
-  filter(year > 1950, year < 2025) %>%
-  ggplot(aes(year, n)) +
-  geom_col(fill = "#C49A00") +
+time_plot <- dataset %>%
+  count(date = year(date)) %>%
+  filter(date > 1950, date < 2025)  %>%
+  ggplot(aes(date, n)) +
+  geom_col(fill = "grey20") +
   labs(y = "Number of Documents", x = "")
+
+ggpubr::ggarrange(time_plot, nword_plot, n_speech_plot, ncol = 3)
+ggsave("Corpus_cummary.pdf", width = 10, height = 2.5)
