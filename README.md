@@ -1,5 +1,5 @@
-# Replication Code of  
-**_"Whatever it takes to understand a central banker"_**
+# Whatever it takes to understand a central banker  
+Repository for the replication Code 
 
 ## Authors
 Martin Baumgärtner and Johannes Zahner
