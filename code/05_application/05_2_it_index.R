@@ -361,15 +361,6 @@ REAINTRATREARAT10Y <- df %>%
   select(d.value) %>%
   ts(start = c(1982, 1), frequency = 12)
 
-#  CPI (CPIAUCSL)
-df <- fredr(c("CPIAUCSL"), units = "pc1") %>% select(DATE = date, value)
-df$D.value <- df$value - 2
-CPIAUCSL <- df %>%
-  select(value) %>%
-  ts(start = c(1947, 1), frequency = 12)
-D.CPIAUCSL <- df %>%
-  select(D.value) %>%
-  ts(start = c(1947, 1), frequency = 12)
 
 # Forward Guidance Shocks (Swanson, 2021, JME)
 FG <- read_xlsx("data/foreign_data/swanson_2021.xlsx", skip = 2, col_types = c("date", "numeric", "numeric", "numeric", "numeric"), col_names = c("DATE", "FFR", "FG", "LSAP", "-LSAP"))
@@ -452,7 +443,7 @@ HD_BN <- HD_BN %>%
 
 
 ######## Final Dataset
-df <- cbind(InfTar, EXPINF1YR, EXPINF2YR, EXPINF10YR, MICH, REAINTRATREARAT1MO, REAINTRATREARAT1YE, REAINTRATREARAT10Y, Infl.Risk.Premium = TENEXPCHAINFRISPRE, Real.Risk.Premium = TENEXPCHAREARISPRE, D.CPIAUCSL, LM, UNC, HD_BN, FG)
+df <- cbind(InfTar, EXPINF1YR, EXPINF2YR, EXPINF10YR, MICH, REAINTRATREARAT1MO, REAINTRATREARAT1YE, REAINTRATREARAT10Y, Infl.Risk.Premium = TENEXPCHAINFRISPRE, Real.Risk.Premium = TENEXPCHAREARISPRE, LM, UNC, HD_BN, FG)
 df <- window(df, start = c(1999, 1), end = c(2020, 1))
 df <- df %>% na.omit()
 
@@ -465,13 +456,13 @@ df %>%
 
 ###### Table 9: Regression
 ols <- list()
-ols[["1"]] <- lm(abs(EXPINF1YR) ~ D.CPIAUCSL + lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG, df)
-ols[["2"]] <- lm(abs(EXPINF2YR) ~ D.CPIAUCSL + lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG, df)
-ols[["3"]] <- lm(abs(EXPINF10YR) ~ D.CPIAUCSL + lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG, df)
-ols[["4"]] <- lm(abs(MICH) ~ D.CPIAUCSL + lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG, df)
-ols[["5"]] <- lm(REAINTRATREARAT1MO ~ EXPINF1YR * lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG + D.CPIAUCSL, df)
-ols[["6"]] <- lm(REAINTRATREARAT1YE ~ EXPINF1YR * lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG + D.CPIAUCSL, df)
-ols[["7"]] <- lm(REAINTRATREARAT10Y ~ EXPINF1YR * lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG + D.CPIAUCSL, df)
+ols[["1"]] <- lm(abs(EXPINF1YR) ~ lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG, df)
+ols[["2"]] <- lm(abs(EXPINF2YR) ~ lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG, df)
+ols[["3"]] <- lm(abs(EXPINF10YR) ~ lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG, df)
+ols[["4"]] <- lm(abs(MICH) ~ lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG, df)
+ols[["5"]] <- lm(REAINTRATREARAT1MO ~ EXPINF1YR * lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG, df)
+ols[["6"]] <- lm(REAINTRATREARAT1YE ~ EXPINF1YR * lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG, df)
+ols[["7"]] <- lm(REAINTRATREARAT10Y ~ EXPINF1YR * lag(InfTar) + Infl.Risk.Premium + Real.Risk.Premium + UNC + LM + HD_BN + FG, df)
 ols[["8"]] <- lm(abs(Infl.Risk.Premium) ~ D.CPIAUCSL + lag(InfTar) + Real.Risk.Premium + UNC + LM + HD_BN + FG, df)
 stargazer::stargazer(ols, type = "text", omit.stat = c("ser", "f"), digits = 2, no.space = FALSE, column.sep.width = "0pt", font.size = "small", keep = c("EXPINF1YR", "InfTar"))
 
