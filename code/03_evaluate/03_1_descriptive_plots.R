@@ -129,7 +129,8 @@ ggsave("Worldmap_corpus.pdf", width = 10, height = 5)
 
 
 ####### Plot 2: Type of documents / Number of speeches
-nword_plot <- dataset %>% count(type = "speech") %>%
+nword_plot <- dataset %>%
+  count(type = "speech") %>%
   mutate(type = if_else(type == FALSE, "Other", "Speech")) %>%
   ggplot(aes(n, type)) +
   geom_col(show.legend = FALSE, fill = "grey20") +
@@ -148,7 +149,7 @@ n_speech_plot <- dataset %>%
 ####### Plot 4: Temporal Variation
 time_plot <- dataset %>%
   count(date = year(date)) %>%
-  filter(date > 1950, date < 2025)  %>%
+  filter(date > 1950, date < 2025) %>%
   ggplot(aes(date, n)) +
   geom_col(fill = "grey20") +
   labs(y = "Number of Documents", x = "")
