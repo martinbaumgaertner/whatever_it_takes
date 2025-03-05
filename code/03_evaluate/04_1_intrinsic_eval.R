@@ -23,8 +23,10 @@
 # Speech Data ------------------------------------------------------------------
 
 ##### Load Speech-data
+
 dataset <- readRDS("data/processed/text_data.Rds")
 
+library(tidyverse)
 
 # Shuffle the dataset rows and create 10 folds for cross-validation.
 # The folds will be used later to train/test on subsets of the data.
@@ -38,9 +40,11 @@ dataset <- dataset %>%
 # Load libraries needed for tokenization, Keras deep learning, and word2vec models
 library(tokenizers)
 library(keras3)
+# reticulate::install_python(version = "3.11:latest")
+# keras3::install_keras()
 library(word2vec)
 library(doc2vec)
-library(tidyverse)
+
 
 
 ####### Create a unique list of words occurring in the text data
@@ -50,13 +54,13 @@ word_list <- tokenize_words(dataset$text) %>%
   tibble(word = .)
 
 # Save the word list to an RDS file for later re-use
-saveRDS(word_list, "wordlist.rds")
+saveRDS(word_list, "data/processed/wordlist.rds")
 
 # Evaluation -------------------------------------------------------------------
 
 
 # Load the word list from the RDS file
-word_list <- readRDS("wordlist.rds")
+word_list <- readRDS("data/processed/wordlist.rds")
 
 # Set the environment to CPU-only if needed
 Sys.setenv("CUDA_VISIBLE_DEVICES" = -1)
@@ -156,15 +160,13 @@ for (embedding_name in embedding_list) {
   matrix <- matrix %>%
     mutate_all(replace_na, 0) %>%
     select(-word) %>%
-    as.matrix() %>%
-    rbind(0, .)
+    as.matrix()
 
   embedding_size <- ncol(matrix)
+  nrow(matrix)
 
-  tokenizer <- text_tokenizer(num_words = nrow(word_list)) %>%
-    fit_text_tokenizer(dataset$text)
-
-
+  tokenizer <- keras::text_tokenizer(num_words = nrow(word_list)) %>%
+    keras::fit_text_tokenizer(dataset$text)
 
   evaluation_results <- tibble("loss" = rep(NA, 10), "acc" = rep(NA, 10), "fold" = rep(NA, 10))
   train_results <- list()
@@ -197,7 +199,7 @@ for (embedding_name in embedding_list) {
             layer_flatten(name = "context_flat"),
           input_context %>%
             layer_embedding(
-              input_dim = tokenizer$num_words + 2,
+              input_dim = tokenizer$num_words,
               output_dim = embedding_size,
               name = "target_embedding"
             ) %>%
