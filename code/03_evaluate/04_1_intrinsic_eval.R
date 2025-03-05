@@ -160,7 +160,8 @@ for (embedding_name in embedding_list) {
   matrix <- matrix %>%
     mutate_all(replace_na, 0) %>%
     select(-word) %>%
-    as.matrix()
+    as.matrix() %>%
+    rbind(0, .)
 
   embedding_size <- ncol(matrix)
   nrow(matrix)
@@ -190,11 +191,11 @@ for (embedding_name in embedding_list) {
         list(
           input_target %>%
             layer_embedding(
-              input_dim = tokenizer$num_words + 1, #+1 because of mask token
+              input_dim = tokenizer$num_words +1, #+1 because of mask token
               output_dim = embedding_size,
               name = "context_embedding",
               weights = list(matrix),
-              trainable = FALSE,
+              trainable = TRUE,
             ) %>%
             layer_flatten(name = "context_flat"),
           input_context %>%
