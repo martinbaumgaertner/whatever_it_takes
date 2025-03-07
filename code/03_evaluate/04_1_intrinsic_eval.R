@@ -22,11 +22,19 @@
 
 # Speech Data ------------------------------------------------------------------
 
-##### Load Speech-data
 
-dataset <- readRDS("data/processed/text_data.Rds")
 
+# Load libraries needed for tokenization, Keras deep learning, and word2vec models
+#keras::install_keras(version = "2.12.0", python_version = "3.8.10")
+
+library(keras)
+library(tokenizers)
+library(word2vec)
+library(doc2vec)
 library(tidyverse)
+
+##### Load Speech-data
+dataset <- readRDS("data/processed/text_data.Rds")
 
 # Shuffle the dataset rows and create 10 folds for cross-validation.
 # The folds will be used later to train/test on subsets of the data.
@@ -35,32 +43,23 @@ dataset <- dataset %>%
   slice(sample(1:n())) %>% # randomize row order
   mutate(fold = cut(seq(1, n()), breaks = 10, labels = FALSE))
 
+if (!file.exists("data/processed/wordlist.rds")) {
+  ####### Create a unique list of words occurring in the text data
+  word_list <- tokenize_words(dataset$text) %>%
+    unlist() %>%
+    unique() %>%
+    tibble(word = .)
 
-
-# Load libraries needed for tokenization, Keras deep learning, and word2vec models
-library(tokenizers)
-library(keras3)
-# reticulate::install_python(version = "3.11:latest")
-# keras3::install_keras()
-library(word2vec)
-library(doc2vec)
-
-
-
-####### Create a unique list of words occurring in the text data
-word_list <- tokenize_words(dataset$text) %>%
-  unlist() %>%
-  unique() %>%
-  tibble(word = .)
-
-# Save the word list to an RDS file for later re-use
-saveRDS(word_list, "data/processed/wordlist.rds")
+  # Save the word list to an RDS file for later re-use
+  saveRDS(word_list, "data/processed/wordlist.rds")
+} else {
+  word_list <- readRDS("data/processed/wordlist.rds")
+}
 
 # Evaluation -------------------------------------------------------------------
 
-
 # Load the word list from the RDS file
-word_list <- readRDS("data/processed/wordlist.rds")
+
 
 # Set the environment to CPU-only if needed
 Sys.setenv("CUDA_VISIBLE_DEVICES" = -1)
@@ -93,17 +92,17 @@ skipgrams_generator <- function(text, tokenizer, window_size, negative_samples) 
 }
 
 # Define a list of different embedding models that we want to evaluate
-embedding_list <- c("glove", "lda_word", "fullword2veccbow300", "fullword2vecskipgram300", "fulldoc2vecPVDBOW300", "fulldoc2vecPVDM300", "fulldoc2vecPVDBOWpre300", "fulldoc2vecPVDMpre300", "word2vec_google")
-# "glove6b",
-
+embedding_list <- c("glove6b","glove", "lda_word", "fullword2veccbow300", "fullword2vecskipgram300", "fulldoc2vecPVDBOW300", "fulldoc2vecPVDM300", "fulldoc2vecPVDBOWpre300", "fulldoc2vecPVDMpre300", "word2vec_google")
 
 # Define the path where embedding models are stored
 embeddings_path <- "data/embeddings/"
 
 # define an empty list to store all results
-results <- list()
 
 for (embedding_name in embedding_list) {
+
+  if (!file.exists(paste0("data/evaluation/",embedding_name,"_evaluation_results.rds"))) {
+
   # glove
   if (embedding_name == "glove6b") {
     embedding <- textdata::embedding_glove6b(dimensions = 300) %>%
@@ -213,15 +212,16 @@ for (embedding_name in embedding_list) {
     )
 
     skipgram_model %>% compile(loss = "binary_crossentropy", optimizer = "adam", c("accuracy"))
-
+    options(keras.view_metrics = TRUE)
     tryCatch(
       {
         skipgram_model %>%
           fit_generator(
-            generator = skipgrams_generator(train_dat$text, tokenizer, 1, 10),
+            skipgrams_generator(train_dat$text, tokenizer, 1, 10),
             steps_per_epoch = 100,
             epochs = 20,
-            verbose = getOption("keras.fit_verbose", default = 1), callbacks = NULL
+            verbose = 2,
+            callbacks = NULL
           )
       },
       error = function(e) {}
@@ -231,7 +231,7 @@ for (embedding_name in embedding_list) {
       purrr::map_df(., unlist)
 
     res <- skipgram_model %>%
-      evaluate_generator(skipgrams_generator(test_dat$text_colloc, tokenizer, 1, 0), steps = 100)
+      evaluate_generator(skipgrams_generator(test_dat$text, tokenizer, 1, 0), steps = 100)
 
     res[["fold"]] <- i
 
@@ -240,11 +240,29 @@ for (embedding_name in embedding_list) {
     gc()
   }
 
-  results[[embedding_name]] <- list("report" = report, "train_results" = train_results, "cv_results" = evaluation_results)
+  results <- list("report" = report, "train_results" = train_results, "cv_results" = evaluation_results)
+
+  saveRDS(results,paste0("data/evaluation/",embedding_name,"_evaluation_results.rds"))
 }
 
-saveRDS(results, "evaluation_results.rds")
+}
 
+extract_colum <-function(path){
+  dat<-readRDS(path)$cv_results
+
+  return(dat)
+}
+
+
+file_paths <- list.files(path = "data/evaluation/", pattern = "\\.rds", full.names = TRUE)
+file_names <-  gsub(pattern = "\\_evaluation_results.rds$", replacement = "", x = basename(file_paths))
+data_list <- lapply(file_paths, extract_colum)
+names(data_list) <- file_names
+
+data_list |> 
+  map_dfr(~ .x %>% as_tibble(), .id = "model")|> 
+  summarise(mean = mean(acc), sd = sd(acc),.by = "model") |> 
+  arrange(mean)
 
 sessionInfo()
 reticulate::py_exe()
