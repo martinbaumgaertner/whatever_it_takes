@@ -249,12 +249,12 @@ for (embedding_name in embedding_list) {
 
 }
 
+
 extract_colum <-function(path){
   dat<-readRDS(path)$cv_results
 
   return(dat)
 }
-
 
 file_paths <- list.files(path = "data/evaluation/", pattern = "\\.rds", full.names = TRUE)
 file_names <-  gsub(pattern = "\\_evaluation_results.rds$", replacement = "", x = basename(file_paths))
@@ -265,8 +265,3 @@ data_list |>
   map_dfr(~ .x %>% as_tibble(), .id = "model")|> 
   summarise(mean = mean(acc), sd = sd(acc),.by = "model") |> 
   arrange(mean)
-
-sessionInfo()
-reticulate::py_exe()
-reticulate::py_config()
-reticulate::py_list_packages()
