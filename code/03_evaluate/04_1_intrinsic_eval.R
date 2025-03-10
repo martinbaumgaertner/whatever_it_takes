@@ -192,15 +192,17 @@ for (embedding_name in embedding_list) {
             layer_embedding(
               input_dim = tokenizer$num_words +1, #+1 because of mask token
               output_dim = embedding_size,
+              input_length = 1,
               name = "context_embedding",
               weights = list(matrix),
-              trainable = TRUE,
+              trainable = FALSE,
             ) %>%
             layer_flatten(name = "context_flat"),
           input_context %>%
             layer_embedding(
               input_dim = tokenizer$num_words,
               output_dim = embedding_size,
+              input_length = 1,
               name = "target_embedding"
             ) %>%
             layer_flatten(name = "target_flat")
@@ -218,7 +220,7 @@ for (embedding_name in embedding_list) {
         skipgram_model %>%
           fit_generator(
             skipgrams_generator(train_dat$text, tokenizer, 1, 10),
-            steps_per_epoch = 100,
+            steps_per_epoch = 1000,
             epochs = 20,
             verbose = 2,
             callbacks = NULL
