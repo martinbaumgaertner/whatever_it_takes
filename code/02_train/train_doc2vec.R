@@ -1,7 +1,6 @@
 library(tidyverse)
 library(doc2vec)
 
-dataset_path <- "data/processed/dataset.Rds"
 embeddings_path <- "data/embeddings/"
 google_vectors_path <- "data/helper/train/GoogleNews-vectors-negative300-SLIM.txt"
 
