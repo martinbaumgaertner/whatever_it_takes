@@ -2,9 +2,7 @@ library(tidyverse)
 library(text2vec)
 library(tidytext)
 
-dataset_path <- "data/processed/dataset.Rds"
 embeddings_path <- "data/embeddings/"
-google_vectors_path <- "data/aux/train/GoogleNews-vectors-negative300-SLIM.txt"
 
 dataset <- read_rds("data/processed/text_data.Rds")
 
